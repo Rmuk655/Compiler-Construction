@@ -1,0 +1,2 @@
+pp16: in case that [ /var gt 0 ] do var = var / 2;
+pp17: otherwise _val = -val;

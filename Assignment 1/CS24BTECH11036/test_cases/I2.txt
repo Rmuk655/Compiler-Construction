@@ -1,0 +1,2 @@
+pp5: null ret = 0;
+pp6: do x = x * 2;

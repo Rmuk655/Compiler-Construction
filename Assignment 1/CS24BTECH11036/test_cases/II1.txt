@@ -1,0 +1,4 @@
+// Variable declaration
+pp1: integer count = 0;
+pp2: string msg = "hello\n";
+pp3: do [ x = x + 1; ]

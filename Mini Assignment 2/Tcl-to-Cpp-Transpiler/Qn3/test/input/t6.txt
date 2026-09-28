@@ -1,0 +1,15 @@
+set count_1 3;
+set avg_val 2.5;
+set result_2 $count_1 * $avg_val;
+if ($result_2 > 5 || $count_1 == 0) {
+    print "$result_2";
+} else {
+}
+while ($count_1>0) {
+    set count_1 $count_1 - 1;
+}
+puts "$count_1";
+if ($count_1 == 0) {
+} else {
+    puts "$avg_val";
+}

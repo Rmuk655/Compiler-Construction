@@ -1,0 +1,15 @@
+set n 5;
+set fact 1;
+set i 1;
+while ($i < $n + 1) {
+    set fact $fact * $i;
+    set i $i + 1;
+}
+puts "$fact";
+set total 0.5;
+set k 0;
+while ($k < 4) {
+    set total $total + $k * 1.5;
+    set k $k + 1;
+}
+puts "$total";

@@ -1,0 +1,34 @@
+# Temporary Makefile for Qn3 (run from Qn3/build):
+#   make -f Makefile1          build the transpiler ./tcl2cpp
+#   make -f Makefile1 test     transpile every test/input/tN.txt, compile and run it
+#   make -f Makefile1 clean    remove generated files
+
+SRC  = ../src
+TEST = ../test
+
+all: tcl2cpp
+
+parser.tab.c parser.tab.h: $(SRC)/parser.y
+	bison -d $(SRC)/parser.y -o parser.tab.c
+
+lex.yy.c: $(SRC)/lexer.l parser.tab.h
+	flex -o lex.yy.c $(SRC)/lexer.l
+
+tcl2cpp: parser.tab.c lex.yy.c
+	gcc -o tcl2cpp parser.tab.c lex.yy.c
+
+# tN.txt -> test/output/outputN.cpp -> test/printed/printedN.txt
+test: tcl2cpp
+	@for f in $(TEST)/input/t*.txt; do \
+		n=$$(basename $$f .txt | sed 's/^t//'); \
+		echo "== t$$n.txt"; \
+		./tcl2cpp < $$f > $(TEST)/output/output$$n.cpp || exit 1; \
+		g++ $(TEST)/output/output$$n.cpp -o prog$$n || exit 1; \
+		./prog$$n > $(TEST)/printed/printed$$n.txt; \
+		cat $(TEST)/printed/printed$$n.txt; \
+	done
+
+clean:
+	rm -f parser.tab.c parser.tab.h lex.yy.c tcl2cpp prog*
+
+.PHONY: all test clean

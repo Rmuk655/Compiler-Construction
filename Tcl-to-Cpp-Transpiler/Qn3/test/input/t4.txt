@@ -1,0 +1,14 @@
+set i 0;
+set sum 0;
+while ($i < 5) {
+    set j 0;
+    while ($j < $i) {
+        set sum $sum + $j;
+        set j $j + 1;
+    }
+    if ($i > 2) {
+        puts "$sum";
+    }
+    set i $i + 1;
+}
+print "$sum";

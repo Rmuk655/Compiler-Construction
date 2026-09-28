@@ -1,0 +1,13 @@
+set x 10;
+set y 2.02;
+set z x + y / 2;
+puts z ;
+if (z > 40)
+{
+puts z ;
+}
+while (x < 20)
+{
+set x x + 1;
+print x ;
+}

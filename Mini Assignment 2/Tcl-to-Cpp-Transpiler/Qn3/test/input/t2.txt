@@ -1,0 +1,12 @@
+set a 5;
+set b 2.5;
+set c $a * 2;
+set d $a / 2.0;
+set e ($a + $b) * 3;
+set f 4.0;
+set g $a+$c*3-4/2;
+puts "$c";
+puts "$d";
+puts "$e";
+puts "$f";
+puts "$g";

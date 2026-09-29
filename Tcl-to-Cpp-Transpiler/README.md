@@ -10,13 +10,25 @@
 
 ## Q1: "warning, rule cannot be matched"
 
-<!-- TODO: explanation + how to run the example lex file in Qn1/ -->
+This warning appears when a rule's pattern is entirely shadowed by an earlier
+rule (longest match wins, ties go to the earlier rule), so the later rule's
+action can never run. See `Qn1/report.pdf` for the full explanation.
+
+- `Qn1/example1.l` — `"end"` shadowed by `[a-z]+`
+- `Qn1/example2.l` — `[0-9]{3}` shadowed by `[0-9]+`
+
+Run: `flex Qn1/example1.l` (or `example2.l`) to reproduce the warning.
 
 ---
 
 ## Q2: Shift-reduce and reduce-reduce conflicts
 
-<!-- TODO: explanation of both grammars + how to run the yacc files in Qn2/ -->
+See `Qn2/report.pdf` for the full explanation.
+
+- `Qn2/sr_conflict.y` — dangling-else grammar, 1 shift/reduce conflict
+- `Qn2/rr_conflict.y` — two identical single-token rules, 1 reduce/reduce conflict
+
+Run: `bison -y -v Qn2/sr_conflict.y` (or `rr_conflict.y`) to reproduce the warnings.
 
 ---
 

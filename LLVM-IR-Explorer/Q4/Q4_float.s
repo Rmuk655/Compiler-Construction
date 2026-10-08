@@ -65,5 +65,5 @@ main:                                   # @main
 	.size	main, .Lfunc_end0-main
 	.cfi_endproc
                                         # -- End function
-	.ident	"Ubuntu clang version 17.0.6 (9ubuntu1)"
+	.ident	"clang version 17.0.6 (https://github.com/llvm/llvm-project.git 6009708b4367171ccdbf4b5905cb6a803753fe18)"
 	.section	".note.GNU-stack","",@progbits

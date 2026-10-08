@@ -21,6 +21,9 @@ define dso_local i32 @main() #0 {
   %8 = load i32, ptr %4, align 4
   %9 = sext i32 %8 to i64
   store i64 %9, ptr %5, align 8
+  %10 = load i64, ptr %5, align 8
+  %11 = trunc i64 %10 to i32
+  store i32 %11, ptr %4, align 4
   ret i32 0
 }
 

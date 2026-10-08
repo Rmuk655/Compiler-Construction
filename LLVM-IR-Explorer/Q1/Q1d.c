@@ -11,5 +11,8 @@ int main(){
 	long d = 4;
 	d = (long) c;
 
+	// (iii) Assigning Long to an Int (Narrowing)
+	c = (int) d;
+
 	return 0;
 }

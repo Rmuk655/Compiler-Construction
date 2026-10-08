@@ -9,26 +9,20 @@ define dso_local i32 @main() #0 {
   %2 = alloca i8, align 1
   %3 = alloca i32, align 4
   %4 = alloca i32, align 4
-  %5 = alloca i8, align 1
+  %5 = alloca i32, align 4
   %6 = alloca i32, align 4
-  %7 = alloca i32, align 4
-  %8 = alloca i32, align 4
   store i32 0, ptr %1, align 4
   store i8 -56, ptr %2, align 1
-  %9 = load i8, ptr %2, align 1
-  %10 = zext i8 %9 to i32
-  store i32 %10, ptr %3, align 4
-  store i32 300, ptr %4, align 4
-  %11 = load i32, ptr %4, align 4
-  %12 = trunc i32 %11 to i8
-  store i8 %12, ptr %5, align 1
-  store i32 1, ptr %6, align 4
-  store i32 2, ptr %7, align 4
-  %13 = load i32, ptr %6, align 4
-  %14 = load i32, ptr %7, align 4
-  %15 = icmp slt i32 %13, %14
-  %16 = zext i1 %15 to i32
-  store i32 %16, ptr %8, align 4
+  %7 = load i8, ptr %2, align 1
+  %8 = zext i8 %7 to i32
+  store i32 %8, ptr %3, align 4
+  store i32 1, ptr %4, align 4
+  store i32 2, ptr %5, align 4
+  %9 = load i32, ptr %4, align 4
+  %10 = load i32, ptr %5, align 4
+  %11 = icmp slt i32 %9, %10
+  %12 = zext i1 %11 to i32
+  store i32 %12, ptr %6, align 4
   ret i32 0
 }
 

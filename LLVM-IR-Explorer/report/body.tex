@@ -1,6 +1,6 @@
 \section*{Introduction}
 
-This report delves into the LLVM compilation pipeline using Clang 17. It involves generating an IR (Intermediate Representation) for various constructs, analysing control flow and data structures, and studying optimizations (mainly -O0 and -O1).
+This report delves into the LLVM compilation pipeline using Clang 17. It involves generating an IR (Intermediate Representation) for various constructs, analysing control flow, data structures and floating-point values (all at -O0).
 
 
 \section{LLVM Directory Layout}
@@ -719,16 +719,16 @@ store double 2.500000e+00, ptr %3, align 8
 
 \section*{References}
 
-[1] LLVM Project, "LLVM Language Reference Manual", https://llvm.org/docs/LangRef.html
+[1] LLVM Project, "LLVM Language Reference Manual", \url{https://llvm.org/docs/LangRef.html}
 
 
-[2] LLVM Project, "Getting Started with the LLVM System" (directory layout, building from source), https://llvm.org/docs/GettingStarted.html
+[2] LLVM Project, "Getting Started with the LLVM System" (directory layout, building from source), \url{https://llvm.org/docs/GettingStarted.html}
 
 
-[3] LLVM Project, "Clang documentation", https://clang.llvm.org/docs/
+[3] LLVM Project, "Clang documentation", \url{https://clang.llvm.org/docs/}
 
 
-[4] LLVM Project, "The Often Misunderstood GEP Instruction", https://llvm.org/docs/GetElementPtr.html
+[4] LLVM Project, "The Often Misunderstood GEP Instruction", \url{https://llvm.org/docs/GetElementPtr.html}
 
 
-[5] Source files and generated outputs of this report: https://github.com/Rmuk655/Compiler-Construction/tree/main/LLVM-IR-Explorer
+[5] Source files and generated outputs of this report: \url{https://github.com/Rmuk655/Compiler-Construction/tree/main/LLVM-IR-Explorer}

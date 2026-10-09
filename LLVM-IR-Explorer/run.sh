@@ -1,9 +1,10 @@
 #!/bin/bash
-# Regenerates every .ll file used in the report (Clang/LLVM 17, -O0 unless noted).
+# Regenerates every output used in the report (Clang/LLVM 17, -O0).
 # Run from this directory: ./run.sh
 # Uses the LLVM 17.0.6 built from source (clang + clang-tools-extra) if present,
 # otherwise falls back to the system clang-17. Override with LLVM_BIN=/path/to/bin
 LLVM_BIN=${LLVM_BIN:-$HOME/llvm-project/build/bin}
+LLVM_SRC=${LLVM_SRC:-$HOME/llvm-project}
 if [ -x "$LLVM_BIN/clang" ]; then
 	CC=$LLVM_BIN/clang; CXX=$LLVM_BIN/clang++; LLC=$LLVM_BIN/llc
 else
@@ -12,19 +13,31 @@ fi
 set -e
 cd "$(dirname "$0")"
 
-for f in Q1/Q1a Q1/Q1b Q1/Q1c Q1/Q1d Q1/Q1e Q2/Q2a Q2/Q2bi Q2/Q2d_union Q4/Q4_float; do
+# Q1: LLVM directory layout (top level, llvm/ and clang/)
+if [ -d "$LLVM_SRC" ]; then
+	{
+		echo "== llvm-project (branch/tag: $(git -C "$LLVM_SRC" describe --tags --always 2>/dev/null))"; ls -1 "$LLVM_SRC"
+		echo; echo "== llvm/"; ls -1 "$LLVM_SRC/llvm"
+		echo; echo "== llvm/lib"; ls -1 "$LLVM_SRC/llvm/lib"
+		echo; echo "== clang/"; ls -1 "$LLVM_SRC/clang"
+		echo; echo "== clang/lib"; ls -1 "$LLVM_SRC/clang/lib"
+	} > Q1/llvm_directory_layout.txt
+fi
+
+# Q2: IR study of core constructs
+for f in Q2/Q2a Q2/Q2b Q2/Q2c Q2/Q2d Q2/Q2e; do
 	$CC -S -emit-llvm -O0 -o $f.ll $f.c
 done
-for f in Q2/Q2bii Q2/Q2c_vector Q2/Q2e_struct_class; do
+
+# Q3: data structures
+for f in Q3/Q3a Q3/Q3bi Q3/Q3d_union; do
+	$CC -S -emit-llvm -O0 -o $f.ll $f.c
+done
+for f in Q3/Q3bii Q3/Q3c_vector Q3/Q3e_struct_class; do
 	$CXX -S -emit-llvm -O0 -o $f.ll $f.cpp
 done
 
-# Q4: machine-code lowering of the floating-point operations (x86-64 assembly)
+# Q4: floating point, plus machine-code lowering (x86-64 assembly)
+$CC -S -emit-llvm -O0 -o Q4/Q4_float.ll Q4/Q4_float.c
 $LLC -O0 Q4/Q4_float.ll -o Q4/Q4_float.s
-
-# Q3: ternary at -O0 and -O1, plus token stream and AST
-$CC -S -emit-llvm -O0 -o Q3/ternary_O0.ll Q3/input.c
-$CC -S -emit-llvm -O1 -o Q3/ternary_O1.ll Q3/input.c
-$CC -fsyntax-only -Xclang -dump-tokens Q3/input.c 2> Q3/tokens.txt || true
-$CC -fsyntax-only -Xclang -ast-dump Q3/input.c > Q3/ast.txt
 echo "done"

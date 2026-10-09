@@ -4,7 +4,6 @@
 # Uses the LLVM 17.0.6 built from source (clang + clang-tools-extra) if present,
 # otherwise falls back to the system clang-17. Override with LLVM_BIN=/path/to/bin
 LLVM_BIN=${LLVM_BIN:-$HOME/llvm-project/build/bin}
-LLVM_SRC=${LLVM_SRC:-$HOME/llvm-project}
 if [ -x "$LLVM_BIN/clang" ]; then
 	CC=$LLVM_BIN/clang; CXX=$LLVM_BIN/clang++; LLC=$LLVM_BIN/llc
 else
@@ -12,17 +11,6 @@ else
 fi
 set -e
 cd "$(dirname "$0")"
-
-# Q1: LLVM directory layout (top level, llvm/ and clang/)
-if [ -d "$LLVM_SRC" ]; then
-	{
-		echo "== llvm-project (branch/tag: $(git -C "$LLVM_SRC" describe --tags --always 2>/dev/null))"; ls -1 "$LLVM_SRC"
-		echo; echo "== llvm/"; ls -1 "$LLVM_SRC/llvm"
-		echo; echo "== llvm/lib"; ls -1 "$LLVM_SRC/llvm/lib"
-		echo; echo "== clang/"; ls -1 "$LLVM_SRC/clang"
-		echo; echo "== clang/lib"; ls -1 "$LLVM_SRC/clang/lib"
-	} > Q1/llvm_directory_layout.txt
-fi
 
 # Q2: IR study of core constructs
 for f in Q2/Q2a Q2/Q2b Q2/Q2c Q2/Q2d Q2/Q2e; do

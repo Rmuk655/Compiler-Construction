@@ -3,13 +3,11 @@
 	.section	.rodata.cst8,"aM",@progbits,8
 	.p2align	3, 0x0                          # -- Begin function main
 .LCPI0_0:
-	.quad	0x4004000000000000              # double 2.5
-.LCPI0_2:
-	.quad	0x4000000000000000              # double 2
+	.quad	0x4016cccccccccccd              # double 5.7000000000000002
 	.section	.rodata.cst4,"aM",@progbits,4
 	.p2align	2, 0x0
 .LCPI0_1:
-	.long	0x3fc00000                      # float 1.5
+	.long	0x40133333                      # float 2.29999995
 	.text
 	.globl	main
 	.p2align	4, 0x90
@@ -36,28 +34,29 @@ main:                                   # @main
 	cvtsd2ss	%xmm0, %xmm0
 	mulss	-8(%rbp), %xmm0
 	movss	%xmm0, -8(%rbp)
-	cvttsd2si	-16(%rbp), %eax
-	movl	%eax, -20(%rbp)
-	cvtsi2sdl	-20(%rbp), %xmm0
-	movsd	%xmm0, -32(%rbp)
-	movss	-8(%rbp), %xmm0                 # xmm0 = mem[0],zero,zero,zero
-	cvtss2sd	%xmm0, %xmm1
 	movsd	-16(%rbp), %xmm0                # xmm0 = mem[0],zero
+	movss	-8(%rbp), %xmm1                 # xmm1 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm1, %xmm1
+	subsd	%xmm1, %xmm0
+	cvttsd2si	%xmm0, %eax
+	movl	%eax, -20(%rbp)
+	movsd	-16(%rbp), %xmm1                # xmm1 = mem[0],zero
+	movss	-8(%rbp), %xmm0                 # xmm0 = mem[0],zero,zero,zero
+	cvtss2sd	%xmm0, %xmm0
 	ucomisd	%xmm1, %xmm0
 	jbe	.LBB0_2
 # %bb.1:
-	movsd	-32(%rbp), %xmm0                # xmm0 = mem[0],zero
-	movsd	.LCPI0_2(%rip), %xmm1           # xmm1 = mem[0],zero
-	divsd	%xmm1, %xmm0
+	cvtsi2ssl	-20(%rbp), %xmm0
+	divss	-8(%rbp), %xmm0
+	cvtss2sd	%xmm0, %xmm0
 	movsd	%xmm0, -32(%rbp)
+	movss	-8(%rbp), %xmm0                 # xmm0 = mem[0],zero,zero,zero
+	movd	%xmm0, %eax
+	xorl	$2147483648, %eax               # imm = 0x80000000
+	movd	%eax, %xmm0
+	movss	%xmm0, -8(%rbp)
 .LBB0_2:
-	movsd	-32(%rbp), %xmm0                # xmm0 = mem[0],zero
-	movq	%xmm0, %rax
-	movabsq	$-9223372036854775808, %rcx     # imm = 0x8000000000000000
-	xorq	%rcx, %rax
-	movq	%rax, %xmm0
-	movsd	%xmm0, -32(%rbp)
-	cvttsd2si	-32(%rbp), %eax
+	movl	-20(%rbp), %eax
 	popq	%rbp
 	.cfi_def_cfa %rsp, 8
 	retq

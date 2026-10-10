@@ -18,7 +18,7 @@ Setup notes for the environment (LLVM 14 / 17, flex, commands used) are in [`Exp
 ## Status
 
 - **Done:** LLVM IR Explorer (programs, generated IR, report); Lex/Yacc calculator; mini-language lexer and parser (tokens and parse output included); LLVM IR and CFG exercises; Tcl → C++ transpiler.
-- **In progress:** Clang AST matcher tool (`clang-ast-matchers/`). The function matcher works; the variable matcher is registered but its counting is not finished.
+- **Clang AST matcher tool** (`clang-ast-matchers/`): function and variable matchers both implemented; yet to be built and run against `test.cpp`.
 - **Kaleidoscope front end:** source is included; see its folder for build instructions.
 
 ## Building the experiments

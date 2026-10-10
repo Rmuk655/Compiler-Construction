@@ -43,6 +43,7 @@ LLVM Version: 17.0.6 (built from source: llvmorg-17.0.6 with clang and clang-too
 
 \tableofcontents
 
+\clearpage
 \section*{Introduction and Methodology}
 
 This report studies how C/C++ constructs, data structures and floating-point values are represented in LLVM IR, using Clang 17.0.6 at -O0. Every .c/.cpp file in Q2, Q3 and Q4 was compiled with clang -S -emit-llvm -O0 (clang++ for C++), and all outputs can be regenerated with run.sh.
@@ -380,6 +381,7 @@ The instruction sext (sign extension) widens a 32-bit integer to 64 bits, preser
 The instruction trunc (truncate) narrows a larger integer (i64, long) to a smaller one (i32, int) by discarding the higher bits, so the value can change if it does not fit.
 
 
+\clearpage
 \section{Lowering of Data Structures to LLVM IR}
 
 3(a) IR was generated for arrays (3.1), std::vector (3.2), structs (3.3), unions (3.4) and classes (3.5). The questions 3(b), 3(c) and 3(d) are answered in 3.6, 3.7 and 3.8.
@@ -586,6 +588,7 @@ Clang uses the member with the largest alignment (largest size on a tie) as the 
 
 Compare the IR of Q3\_struct.c (3.3) and Q3\_class.cpp (3.5). Both types lower to the same layout, \%struct.Point = type \{ i32, i32 \} and \%class.Point = type \{ i32, i32 \}, and differ only in the type name. The class constructor is a normal function (\_ZN5PointC2Ev) that takes the object pointer as its first argument, while the struct members are set directly with getelementptr and store. Public/private access is checked by the frontend and does not appear in the IR. Real differences come from the contents of the type (constructors, virtual functions, base classes), not from the keyword.
 
+\clearpage
 \section{Floating-Point Representation in LLVM IR}
 
 \subsection{C Code in Q4\_float.c}

@@ -13,7 +13,7 @@ set -e
 cd "$(dirname "$0")"
 
 # Q2: IR study of core constructs
-for f in Q2/Q2_variables Q2/Q2_conditionals_loops Q2/Q2_functions Q2/Q2_casts Q2/Q2_zext; do
+for f in Q2/Q2_variables Q2/Q2_conditionals_loops Q2/Q2_functions Q2/Q2_casts; do
 	$CC -S -emit-llvm -O0 -o $f.ll $f.c
 done
 

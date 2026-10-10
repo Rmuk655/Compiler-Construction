@@ -35,6 +35,10 @@ public:
         count++;
       outs() << "Function name: " << FD->getNameAsString() <<" "<< count<<"\n";
     }
+    if(const VarDecl *VD = Result.Nodes.getNodeAs<VarDecl>("variable")){
+      Var_count++;
+      outs() << "Variable name: " << VD->getNameAsString() <<" "<< Var_count<<"\n";
+    }
     
   }
 };

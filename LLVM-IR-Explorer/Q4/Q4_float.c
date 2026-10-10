@@ -1,11 +1,14 @@
+#include <stdio.h>
+
 int main(){
-	float f = 1.5f;
-	double d = 2.5;
-	d = d + f;          // fpext + fadd
-	f = (float) d * f;  // fptrunc + fmul
-	int i = (int) d;    // fptosi
-	double e = i;       // sitofp
-	if (f < d) e = e / 2.0; // fcmp + fdiv
-	e = -e;             // fneg
-	return (int) e;
+	float a = 2.3f;
+	double b = 5.7;
+	b = b + a;
+	a = (float) b * a;
+	int c = (int) (b - a);
+	if(b < a){
+		double d = c / a;
+		a = -a;
+	}
+	return (int) c;
 }

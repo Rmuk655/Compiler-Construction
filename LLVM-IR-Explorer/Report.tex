@@ -570,13 +570,7 @@ Clang uses the member with the largest alignment (largest size on a tie) as the 
 \needspace{6\baselineskip}
 \textbf{3(d) What are the differences between struct and class of C++ once lowered in LLVM IR?}
 
-Type definition of struct Point\{ int x; int y; \}: \%struct.Point = type \{ i32, i32 \}
-
-Type definition of class Point\{ int x; int y; \}: \%class.Point = type \{ i32, i32 \}
-
-The type definition shows that the struct/class Point consists of two i32 members (x and y) stored sequentially in memory. There are no structural differences in the type layout between struct and class.
-
-Constructors appear as normal functions in LLVM IR. The object pointer (this: \%0) is passed as an argument, and the constructor initializes the fields using getelementptr and store instructions.
+There are no structural differences in the type layout between struct and class: both are \{ i32, i32 \} (\%struct.Point in 3.3 and \%class.Point in 3.5). The only difference is the constructor of the class, which appears as a normal function in LLVM IR (3.5).
 
 \clearpage
 \section{Floating-Point Representation in LLVM IR}

@@ -13,15 +13,15 @@ set -e
 cd "$(dirname "$0")"
 
 # Q2: IR study of core constructs
-for f in Q2/Q2a Q2/Q2b Q2/Q2c Q2/Q2d Q2/Q2e; do
+for f in Q2/Q2_variables Q2/Q2_conditionals_loops Q2/Q2_functions Q2/Q2_casts Q2/Q2_zext; do
 	$CC -S -emit-llvm -O0 -o $f.ll $f.c
 done
 
 # Q3: data structures
-for f in Q3/Q3a Q3/Q3bi Q3/Q3d_union; do
+for f in Q3/Q3_array Q3/Q3_struct Q3/Q3_union; do
 	$CC -S -emit-llvm -O0 -o $f.ll $f.c
 done
-for f in Q3/Q3bii Q3/Q3c_vector Q3/Q3e_struct_class; do
+for f in Q3/Q3_vector Q3/Q3_class Q3/Q3_struct_vs_class; do
 	$CXX -S -emit-llvm -O0 -o $f.ll $f.cpp
 done
 

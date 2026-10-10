@@ -50,7 +50,7 @@ This report delves into the LLVM compilation pipeline using Clang 17. It involve
 
 \section*{Methodology}
 
-LLVM and Clang 17.0.6 were built from source (X86 target, Release, clang and clang-tools-extra only). Every .c/.cpp file was compiled with clang -S -emit-llvm -O0 (clang++ for C++), and the x86-64 assembly of Q4 with llc -O0. All outputs can be regenerated with run.sh. Folders Q2, Q3 and Q4 follow the assignment items; item 1 is theory only.
+LLVM and Clang 17.0.6 were built from source (X86 target, Release, clang and clang-tools-extra only). Every .c/.cpp file was compiled with clang -S -emit-llvm -O0 (clang++ for C++). All outputs can be regenerated with run.sh. Folders Q2, Q3 and Q4 follow the assignment items; item 1 is theory only.
 
 \section{LLVM Directory Layout}
 
@@ -62,7 +62,7 @@ The LLVM source (llvm-project, release/17.x) has these main directories:
 
 \textbf{clang-tools-extra/: }extra tools built on Clang, such as clang-tidy and clangd.
 
-Flow used in this report: C/C++ source $\rightarrow$ clang frontend $\rightarrow$ LLVM IR (.ll) $\rightarrow$ llc $\rightarrow$ assembly.
+Flow used in this report: C/C++ source $\rightarrow$ clang frontend $\rightarrow$ LLVM IR (.ll).
 
 \section{LLVM IR Study of Core C/C++ Constructs}
 
@@ -354,7 +354,7 @@ The cast instructions used (fptosi, sext, trunc) and when each one is chosen:
 %7 = fptosi double %6 to i32
 \end{lstlisting}
 
-The instruction fptosi (floating point to signed integer) is used to convert a double to an integer (narrowing) where precision is lost in the process of converting a larger type (double) to a smaller type (int).
+The instruction fptosi (floating point to signed integer) converts a double to an int (narrowing), so the fractional part is lost.
 
 
 \needspace{6\baselineskip}
@@ -368,9 +368,10 @@ The instruction fptosi (floating point to signed integer) is used to convert a d
 %9 = sext i32 %8 to i64
 \end{lstlisting}
 
-The instruction sext (sign extension) is used to convert a 32-bit integer to a 64-bit integer (widening) where the sign is preserved while the value is extended.
+The instruction sext (sign extension) widens a 32-bit integer to 64 bits, preserving the sign.
 
 
+\needspace{6\baselineskip}
 \textbf{trunc}
 
 
@@ -381,7 +382,7 @@ The instruction sext (sign extension) is used to convert a 32-bit integer to a 6
   %11 = trunc i64 %10 to i32
 \end{lstlisting}
 
-The instruction trunc (truncate) is used to convert a larger integer type (i64, long) to a smaller one (i32, int) by discarding the higher bits, so the value can change if it does not fit.
+The instruction trunc (truncate) narrows a larger integer (i64, long) to a smaller one (i32, int) by discarding the higher bits, so the value can change if it does not fit.
 
 
 \section{Lowering of Data Structures to LLVM IR}
@@ -762,7 +763,7 @@ Arithmetic uses fadd, fsub, fmul, fdiv, frem and fneg, and both operands must ha
 
 \subsection{Type lowering of floating-point values}
 
-LLVM IR has no implicit conversions, so Clang inserts an explicit instruction for each one: fpext (float to double, in b + a), fptrunc (double to float), fptosi (double to int) and sitofp (int to float, in c / a). In the assembly (Q4\_float.s) these become SSE instructions: cvtss2sd/cvtsd2ss for fpext/fptrunc, cvttsd2si/cvtsi2ss for fptosi/sitofp, addsd/subsd (double) and mulss/divss (float) for arithmetic, ucomisd for fcmp, and an xor with the sign bit for fneg.
+LLVM IR has no implicit conversions, so Clang inserts an explicit instruction for each one: fpext (float to double, in b + a, b < a and the result of c / a), fptrunc (double to float), fptosi (double to int) and sitofp (int to float, in c / a).
 
 \section*{Declaration of usage of AI/LLMs}
 

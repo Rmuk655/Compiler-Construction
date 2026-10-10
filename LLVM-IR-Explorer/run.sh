@@ -1,9 +1,9 @@
 #!/bin/bash
 LLVM_BIN=${LLVM_BIN:-$HOME/llvm-project/build/bin}
 if [ -x "$LLVM_BIN/clang" ]; then
-    CC=$LLVM_BIN/clang; CXX=$LLVM_BIN/clang++; LLC=$LLVM_BIN/llc
+    CC=$LLVM_BIN/clang; CXX=$LLVM_BIN/clang++
 else
-    CC=clang-17; CXX=clang++-17; LLC=llc-17
+    CC=clang-17; CXX=clang++-17
 fi
 set -e
 cd "$(dirname "$0")"
@@ -20,5 +20,4 @@ for f in Q3/Q3_vector Q3/Q3_class Q3/Q3_struct_vs_class; do
 done
 
 $CC -S -emit-llvm -O0 -o Q4/Q4_float.ll Q4/Q4_float.c
-$LLC -O0 Q4/Q4_float.ll -o Q4/Q4_float.s
 echo "done"

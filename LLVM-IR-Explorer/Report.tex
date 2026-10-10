@@ -453,7 +453,7 @@ call void @_ZNSt6vectorIiSaIiEED2Ev(ptr ... %2)         ; destructor
 %10 = getelementptr inbounds i32, ptr %8, i64 %9         ; &begin[index]
 \end{lstlisting}
 
-std::vector is a C++ class, so the IR is a struct of three pointers (see 3(b)) and every operation is a function call. push\_back uses invoke (not call) because it can throw, and operator[] loads the begin pointer and uses one getelementptr index. using namespace std; only affects name lookup, so it adds no IR.
+std::vector is a C++ class, not an IR class. So the IR stores it as a struct of three pointers and every operation on it is a function call. push\_back uses invoke (function call that tells a function where to go when an exception is thrown) (not call) because it can throw an exception like out of memory error while dynamically allocating, while operator[] loads the begin pointer and uses one getelementptr index to compute the address of the element in the vector at that specified index.
 
 \subsection{C Code in Q3\_struct.c (struct)}
 
@@ -554,14 +554,13 @@ Constructors appear as normal functions in LLVM IR. The object pointer (this: \%
 \needspace{6\baselineskip}
 \textbf{3(b) What is the difference between arrays and vectors in LLVM IR?}
 
-An array is a built-in LLVM type ([5 x i32]) of fixed size, allocated directly with alloca and accessed with getelementptr using two indices (0, i). A std::vector is a class, i.e. a struct of three pointers (24 bytes) whose elements are on the heap, accessed only through function calls (push\_back, operator[]). LLVM also has its own vector type (\textless{}4 x i32\textgreater{}) for SIMD, which is unrelated to std::vector.
-
+An array is a built-in LLVM type ([5 x i32]) of fixed size, allocated directly with alloca and accessed with getelementptr using two indices (0, i). A std::vector is a class, i.e. a struct of three pointers (24 bytes) whose elements are on the heap, accessed only through function calls (push\_back, operator[]).
 \subsection{Type of a union}
 
 \needspace{6\baselineskip}
 \textbf{3(c) How is the type of a union determined in LLVM IR?}
 
-Clang uses the member with the largest alignment (largest size on a tie) as the union's type and pads the end if the union is bigger than it. Here i and f are both 4 bytes with alignment 4, so the type is \{ i32 \} (size 4, no padding). Adding char c[8] would give \{ i32, [4 x i8] \} (size 8), since c[8] has alignment 1 but needs 8 bytes.
+Clang uses the member which aligns the most with the rule the that it's type address must be a multiple of some number of bytes (largest byte size on a tie) as the union's type and pads the end if the union is bigger than it. Here i and f are both 4 bytes with alignment 4, so the type is \{ i32 \} (size 4, no padding). Adding char c[8] would give \{ i32, [4 x i8] \} (size 8), since c[8] has alignment 1 but needs 8 bytes.
 
 \subsection{struct vs class}
 

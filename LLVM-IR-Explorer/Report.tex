@@ -430,16 +430,6 @@ i64 %15  Element index (i)
 arr1[i] -> address = base + i * sizeof(int)  GEP Computes this address
 \end{lstlisting}
 
-\textbf{Allocation: alloca (stack) vs malloc (heap)}
-
-The static array arr1 is allocated on the stack with \%2 = alloca [5 x i32], align 16, while the dynamic array arr2 calls the external function malloc (hence the declare), which returns a pointer stored in \%3:
-
-\begin{lstlisting}
-declare noalias ptr @malloc(i64 noundef) #1
-%8 = call noalias ptr @malloc(i64 noundef 20)   ; 5 * 4 bytes
-store ptr %8, ptr %3
-\end{lstlisting}
-
 \subsection{C++ Code in Q3\_vector.cpp (std::vector)}
 
 \begin{lstlisting}

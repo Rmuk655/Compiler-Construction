@@ -43,14 +43,9 @@ LLVM Version: 17.0.6 (built from source: llvmorg-17.0.6 with clang and clang-too
 
 \tableofcontents
 
-\section*{Introduction}
+\section*{Introduction and Methodology}
 
-This report delves into the LLVM compilation pipeline using Clang 17. It involves generating an IR (Intermediate Representation) for various constructs, analysing control flow, data structures and floating-point values (all at -O0).
-
-
-\section*{Methodology}
-
-LLVM and Clang 17.0.6 were built from source (X86 target, Release, clang and clang-tools-extra only). Every .c/.cpp file was compiled with clang -S -emit-llvm -O0 (clang++ for C++). All outputs can be regenerated with run.sh. Folders Q2, Q3 and Q4 follow the assignment items; item 1 is theory only.
+This report studies how C/C++ constructs, data structures and floating-point values are represented in LLVM IR, using Clang 17.0.6 at -O0. Every .c/.cpp file in Q2, Q3 and Q4 was compiled with clang -S -emit-llvm -O0 (clang++ for C++), and all outputs can be regenerated with run.sh.
 
 \section{LLVM Directory Layout}
 

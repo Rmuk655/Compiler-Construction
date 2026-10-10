@@ -15,7 +15,7 @@ done
 for f in Q3/Q3_array Q3/Q3_struct Q3/Q3_union; do
     $CC -S -emit-llvm -O0 -o $f.ll $f.c
 done
-for f in Q3/Q3_vector Q3/Q3_class Q3/Q3_struct_vs_class; do
+for f in Q3/Q3_vector Q3/Q3_class; do
     $CXX -S -emit-llvm -O0 -o $f.ll $f.cpp
 done
 

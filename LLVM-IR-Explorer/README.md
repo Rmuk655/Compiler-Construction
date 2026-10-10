@@ -4,7 +4,7 @@ Small C/C++ programs and the LLVM IR that Clang 17.0.6 (built from source) gener
 
 | Dir | Covers |
 |-----|--------|
-| `Q2/` | IR study: globals/locals, conditionals and loops, functions, integer casts (`fptosi`, `sext`, `trunc`, `zext`) |
+| `Q2/` | IR study: globals/locals, conditionals and loops, functions, integer casts (`fptosi`, `sext`, `trunc`) |
 | `Q3/` | data structures: arrays, struct, class, `std::vector`, union, struct vs class |
 | `Q4/` | floating-point types, operations and casts |
 

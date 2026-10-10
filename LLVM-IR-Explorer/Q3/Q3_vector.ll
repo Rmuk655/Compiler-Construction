@@ -97,44 +97,41 @@ define dso_local noundef i32 @main() #0 personality ptr @__gxx_personality_v0 {
   %4 = alloca ptr, align 8
   %5 = alloca i32, align 4
   %6 = alloca i32, align 4
-  %7 = alloca i32, align 4
   store i32 0, ptr %1, align 4
   call void @_ZNSt6vectorIiSaIiEEC2Ev(ptr noundef nonnull align 8 dereferenceable(24) %2) #9
   store i32 1, ptr %3, align 4
   invoke void @_ZNSt6vectorIiSaIiEE9push_backEOi(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr noundef nonnull align 4 dereferenceable(4) %3)
-          to label %8 unwind label %14
+          to label %7 unwind label %12
 
-8:                                                ; preds = %0
+7:                                                ; preds = %0
   store i32 2, ptr %6, align 4
   invoke void @_ZNSt6vectorIiSaIiEE9push_backEOi(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr noundef nonnull align 4 dereferenceable(4) %6)
-          to label %9 unwind label %14
+          to label %8 unwind label %12
 
-9:                                                ; preds = %8
-  %10 = call noundef nonnull align 4 dereferenceable(4) ptr @_ZNSt6vectorIiSaIiEEixEm(ptr noundef nonnull align 8 dereferenceable(24) %2, i64 noundef 1) #9
-  %11 = load i32, ptr %10, align 4
-  store i32 %11, ptr %7, align 4
-  %12 = load i32, ptr %7, align 4
-  store i32 %12, ptr %1, align 4
+8:                                                ; preds = %7
+  %9 = call noundef nonnull align 4 dereferenceable(4) ptr @_ZNSt6vectorIiSaIiEEixEm(ptr noundef nonnull align 8 dereferenceable(24) %2, i64 noundef 0) #9
+  %10 = load i32, ptr %9, align 4
+  store i32 %10, ptr %1, align 4
   call void @_ZNSt6vectorIiSaIiEED2Ev(ptr noundef nonnull align 8 dereferenceable(24) %2) #9
-  %13 = load i32, ptr %1, align 4
-  ret i32 %13
+  %11 = load i32, ptr %1, align 4
+  ret i32 %11
 
-14:                                               ; preds = %8, %0
-  %15 = landingpad { ptr, i32 }
+12:                                               ; preds = %7, %0
+  %13 = landingpad { ptr, i32 }
           cleanup
-  %16 = extractvalue { ptr, i32 } %15, 0
-  store ptr %16, ptr %4, align 8
-  %17 = extractvalue { ptr, i32 } %15, 1
-  store i32 %17, ptr %5, align 4
+  %14 = extractvalue { ptr, i32 } %13, 0
+  store ptr %14, ptr %4, align 8
+  %15 = extractvalue { ptr, i32 } %13, 1
+  store i32 %15, ptr %5, align 4
   call void @_ZNSt6vectorIiSaIiEED2Ev(ptr noundef nonnull align 8 dereferenceable(24) %2) #9
-  br label %18
+  br label %16
 
-18:                                               ; preds = %14
-  %19 = load ptr, ptr %4, align 8
-  %20 = load i32, ptr %5, align 4
-  %21 = insertvalue { ptr, i32 } poison, ptr %19, 0
-  %22 = insertvalue { ptr, i32 } %21, i32 %20, 1
-  resume { ptr, i32 } %22
+16:                                               ; preds = %12
+  %17 = load ptr, ptr %4, align 8
+  %18 = load i32, ptr %5, align 4
+  %19 = insertvalue { ptr, i32 } poison, ptr %17, 0
+  %20 = insertvalue { ptr, i32 } %19, i32 %18, 1
+  resume { ptr, i32 } %20
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable

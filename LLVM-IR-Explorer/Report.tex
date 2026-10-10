@@ -390,18 +390,12 @@ The instruction trunc (truncate) narrows a larger integer (i64, long) to a small
 
 \begin{lstlisting}
 #include <stdio.h>
-#include <stdlib.h>
 int main(){
         int arr1[5];
-        int *arr2 = (int*) malloc(5 * sizeof(int));
         for(int i = 0; i < 5; i++){
                 arr1[i] = i;
         }
         int d = arr1[2];
-        for(int i = 0; i < 5; i++){
-                arr2[i] = i;
-        }
-        int e = arr2[2];
         return 0;
 }
 \end{lstlisting}
@@ -419,14 +413,14 @@ int main(){
 The getelementptr (GEP) instruction is used to compute the address of an element in an array. GEP does not perform memory access, it only computes addresses. 
 
 
-Ex: \%16 = getelementptr inbounds [5 x i32], ptr \%2, i64 0, i64 \%15
+Ex: \%12 = getelementptr inbounds [5 x i32], ptr \%2, i64 0, i64 \%11
 
 
 \begin{lstlisting}
 [5 x i32]  Array type (5 integers)
 ptr %2  Base address of array
 i64 0  First index (array itself)
-i64 %15  Element index (i)
+i64 %11  Element index (i)
 arr1[i] -> address = base + i * sizeof(int)  GEP Computes this address
 \end{lstlisting}
 

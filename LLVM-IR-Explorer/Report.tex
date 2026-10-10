@@ -453,7 +453,7 @@ call void @_ZNSt6vectorIiSaIiEED2Ev(ptr ... %2)         ; destructor
 %10 = getelementptr inbounds i32, ptr %8, i64 %9         ; &begin[index]
 \end{lstlisting}
 
-std::vector is not a built-in LLVM type. It is a C++ class lowered to a struct whose innermost type is three pointers (begin, end, end\_of\_storage), so the object takes 24 bytes on the stack and the elements live on the heap. The constructor, push\_back, operator[] and the destructor are plain function calls. operator[] loads the begin pointer and uses one getelementptr index. push\_back uses invoke (not call) because it can throw. using namespace std; only affects name lookup, so it adds no IR.
+std::vector is a C++ class, so the IR is a struct of three pointers (see 3(b)) and every operation is a function call. push\_back uses invoke (not call) because it can throw, and operator[] loads the begin pointer and uses one getelementptr index. using namespace std; only affects name lookup, so it adds no IR.
 
 \subsection{C Code in Q3\_struct.c (struct)}
 
@@ -473,11 +473,9 @@ int main(){
 
 \medskip\noindent\textbf{IR Code Snippets in Q3\_struct.ll:}\par\nopagebreak[4]
 
-\textbf{Type definition and member alignment}
+\textbf{Type definition}
 
 Type definition of struct Point\{ int x; int y; \}: \%struct.Point = type \{ i32, i32 \}
-
-The type definition shows that the struct Point consists of two i32 members (x and y) stored sequentially in memory.
 
 \begin{lstlisting}
 %2 = alloca %struct.Point, align 4

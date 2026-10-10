@@ -704,21 +704,63 @@ int main(){
 \medskip\noindent\textbf{IR Code Snippets in Q4\_float.ll:}\par
 
 \begin{lstlisting}
-%2 = alloca float, align 4
-%3 = alloca double, align 8
-store float 0x4002666660000000, ptr %2, align 4
-store double 5.700000e+00, ptr %3, align 8
-%8 = fpext float %7 to double              ; float -> double
-%9 = fadd double %6, %8                    ; b + a
-%11 = fptrunc double %10 to float          ; double -> float
-%13 = fmul float %11, %12
-%17 = fsub double %14, %16                 ; b - a
-%18 = fptosi double %17 to i32             ; double -> int
-%22 = fcmp olt double %19, %21             ; b < a
-%25 = sitofp i32 %24 to float              ; int -> float
-%27 = fdiv float %25, %26
-%28 = fpext float %27 to double
-%30 = fneg float %29                       ; -a
+%1 = alloca i32, align 4                       ; return value of main
+%2 = alloca float, align 4                     ; float a
+%3 = alloca double, align 8                    ; double b
+%4 = alloca i32, align 4                       ; int c
+%5 = alloca double, align 8                    ; double d
+store i32 0, ptr %1, align 4                   ; return slot = 0
+store float 0x4002666660000000, ptr %2, align 4 ; a = 2.3f
+store double 5.700000e+00, ptr %3, align 8     ; b = 5.7
+
+; b = b + a
+%6 = load double, ptr %3, align 8              ; load b
+%7 = load float, ptr %2, align 4               ; load a
+%8 = fpext float %7 to double                  ; a: float -> double
+%9 = fadd double %6, %8                        ; b + a
+store double %9, ptr %3, align 8               ; b = b + a
+
+; a = (float) b * a
+%10 = load double, ptr %3, align 8             ; load b
+%11 = fptrunc double %10 to float              ; (float) b: double -> float
+%12 = load float, ptr %2, align 4              ; load a
+%13 = fmul float %11, %12                      ; (float) b * a
+store float %13, ptr %2, align 4               ; a = result
+
+; int c = (int) (b - a)
+%14 = load double, ptr %3, align 8             ; load b
+%15 = load float, ptr %2, align 4              ; load a
+%16 = fpext float %15 to double                ; a: float -> double
+%17 = fsub double %14, %16                     ; b - a
+%18 = fptosi double %17 to i32                 ; (int): double -> int
+store i32 %18, ptr %4, align 4                 ; c = result
+
+; if (b < a)
+%19 = load double, ptr %3, align 8             ; load b
+%20 = load float, ptr %2, align 4              ; load a
+%21 = fpext float %20 to double                ; a: float -> double
+%22 = fcmp olt double %19, %21                 ; b < a (ordered, less than)
+br i1 %22, label %23, label %31                ; true -> block 23, false -> 31
+
+23:                                            ; body of the if
+; double d = c / a
+%24 = load i32, ptr %4, align 4                ; load c
+%25 = sitofp i32 %24 to float                  ; c: int -> float
+%26 = load float, ptr %2, align 4              ; load a
+%27 = fdiv float %25, %26                      ; c / a
+%28 = fpext float %27 to double                ; result: float -> double
+store double %28, ptr %5, align 8              ; d = result
+
+; a = -a
+%29 = load float, ptr %2, align 4              ; load a
+%30 = fneg float %29                           ; -a
+store float %30, ptr %2, align 4               ; a = -a
+br label %31                                   ; leave the if
+
+31:                                            ; after the if
+; return (int) c
+%32 = load i32, ptr %4, align 4                ; load c (already int, no cast)
+ret i32 %32                                    ; return c
 \end{lstlisting}
 
 \subsection{Representation of floating-point numbers}

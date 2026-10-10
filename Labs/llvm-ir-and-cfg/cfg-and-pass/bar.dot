@@ -1,0 +1,5 @@
+digraph "CFG for 'bar' function" {
+	label="CFG for 'bar' function";
+
+	Node0x63040c54e9d0 [shape=record,color="#b70d28ff", style=filled, fillcolor="#b70d2870" fontname="Courier",label="{entry:\l|  %b = alloca i32, align 4\l  store i32 10, ptr %b, align 4\l  %0 = load i32, ptr %b, align 4\l  %call = call i32 @foo(i32 noundef %0)\l  %1 = load i32, ptr %b, align 4\l  ret i32 %1\l}"];
+}

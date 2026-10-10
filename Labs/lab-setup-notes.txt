@@ -1,0 +1,46 @@
+Compilers 2 Lab
+
+Labs
+1)You can install flex using `sudo apt install flex`.
+2)Please clone this repo for today's lab session: https://github.com/sreevyshnavi02/lex_yacc_lab_session_sept26
+3)Please install llvm 14 for today's lab session
+#!/bin/bash
+sudo apt update
+sudo apt install -y \
+    llvm-14 \
+    llvm-14-dev \
+    clang-14 \
+    lld-14 \
+    cmake \
+    git \
+    build-essential
+echo "Checking LLVM installation..."
+clang-14 --version
+clang++-14 --version
+opt-14 --version
+llvm-config-14 --version
+4)For tomorrow's lab session 
+Please Install LLVM-17 from source. These are the installation steps. LLVM Installation steps :
+git clone https://github.com/llvm/llvm-project.git
+cd llvm-project
+git checkout llvmorg-17.0.6
+mkdir build
+cd build
+cmake -G "Unix Makefiles" -DLLVM_TARGETS_TO_BUILD=X86 -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra"  -DCMAKE_BUILD_TYPE=Release ../llvm 
+make -j$(nproc)
+5)Modified version of the kaleidoscope tutorial: https://github.com/sreevyshnavi02/kaleidoscope_tutorial.git
+https://llvm.org/doxygen/classllvm_1_1Value.html
+6)Clang AST Matcher Document: https://clang.llvm.org/docs/LibASTMatchersReference.html
+
+Commands
+LLVM IR
+1)Normal commands: clang -S -g -emit-llvm temp.c -o temp.ll 
+clang -S -emit-llvm -Xclang -disable-O0-optnone temp.c -o temp.ll
+2)Commands to view CFG:
+clang -x c -S -emit-llvm -O0 -Xclang -disable-O0-optnone -fno-discard-value-names temp.c -o temp.ll
+opt -passes=dot-cfg temp.ll -disable-output
+(in bash) Writing '.foo.dot'...
+(in bash) Writing '.bar.dot'...
+dot -Tpdf .foo.dot -o foo.pdf && dot -Tpdf .bar.dot -o bar.pdf
+
+

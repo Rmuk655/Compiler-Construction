@@ -1,0 +1,5 @@
+digraph "CFG for 'foo' function" {
+	label="CFG for 'foo' function";
+
+	Node0x63040c548300 [shape=record,color="#b70d28ff", style=filled, fillcolor="#b70d2870" fontname="Courier",label="{entry:\l|  %a.addr = alloca i32, align 4\l  %c = alloca i32, align 4\l  store i32 %a, ptr %a.addr, align 4\l  %0 = load i32, ptr %a.addr, align 4\l  %1 = load i32, ptr %a.addr, align 4\l  %2 = load i32, ptr %a.addr, align 4\l  %mul = mul nsw i32 %1, %2\l  %3 = load i32, ptr %a.addr, align 4\l  %div = sdiv i32 %mul, %3\l  %add = add nsw i32 %0, %div\l  store i32 %add, ptr %c, align 4\l  %4 = load i32, ptr %a.addr, align 4\l  ret i32 %4\l}"];
+}

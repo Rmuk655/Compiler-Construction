@@ -1,0 +1,162 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{fancyvrb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,topsep=4pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\sloppy
+\setlength{\emergencystretch}{4em}
+\newcommand{\todo}[1]{\textbf{[TODO: #1]}}
+
+\title{CS3423 Compilers II\\Mini-Assignment 4: Clang AST Passes}
+\author{CS24BTECH11030, CS24BTECH11036}
+\date{October 2026}
+
+\begin{document}
+\maketitle
+
+\section{Part 1: Exploring AST dumps}
+
+\subsection{Program}
+The input is \texttt{nested\_loops.cpp}: a function \texttt{f} containing a loop, and a \texttt{main} with a doubly nested loop (both loops use a variable called \texttt{i}) and a call to \texttt{f}.
+
+\begin{Verbatim}[fontsize=\footnotesize,frame=single]
+#include <stdio.h>
+
+void f(int n){
+    for(int i = 0; i < n; i++){
+        printf("Hello World\n");
+    }
+}
+
+int main(){
+    int n = 10;
+    for(int i = 0; i < n; i++){
+        for(int i = 0; i < n; i++){
+            printf("Hello World\n");
+        }
+    }
+    f(n);
+    return 0;
+}
+\end{Verbatim}
+
+\subsection{Dumping the AST}
+\begin{Verbatim}[fontsize=\footnotesize]
+clang -fsyntax-only -Xclang -ast-dump -Xclang -ast-dump-filter=main nested_loops.cpp
+\end{Verbatim}
+\texttt{-ast-dump-filter=main} restricts the dump to the declaration named \texttt{main}; without it the headers pulled in by \texttt{<stdio.h>} dominate the output. The dump below has addresses and most source ranges removed for readability (the raw output is \texttt{ast\_dump\_main.txt}).
+
+\begin{Verbatim}[fontsize=\scriptsize,frame=single]
+FunctionDecl main 'int ()'
+`-CompoundStmt
+  |-DeclStmt
+  | `-VarDecl used n 'int' cinit
+  |   `-IntegerLiteral 'int' 10
+  |-ForStmt                                   <-- outer loop
+  | |-DeclStmt
+  | | `-VarDecl used i 'int' cinit
+  | |   `-IntegerLiteral 'int' 0
+  | |-<<<NULL>>>                              <-- no condition variable
+  | |-BinaryOperator 'bool' '<'
+  | | |-ImplicitCastExpr 'int' <LValueToRValue>
+  | | | `-DeclRefExpr 'int' lvalue Var 'i'
+  | | `-ImplicitCastExpr 'int' <LValueToRValue>
+  | |   `-DeclRefExpr 'int' lvalue Var 'n'
+  | |-UnaryOperator 'int' postfix '++'
+  | | `-DeclRefExpr 'int' lvalue Var 'i'
+  | `-CompoundStmt
+  |   `-ForStmt                               <-- inner loop
+  |     |-DeclStmt ... (VarDecl i)
+  |     |-<<<NULL>>>
+  |     |-BinaryOperator 'bool' '<'
+  |     |-UnaryOperator 'int' postfix '++'
+  |     `-CompoundStmt
+  |       `-CallExpr 'int'                     <-- printf(...)
+  |         |-ImplicitCastExpr <FunctionToPointerDecay>
+  |         | `-DeclRefExpr Function 'printf'
+  |         `-ImplicitCastExpr <ArrayToPointerDecay>
+  |           `-StringLiteral "Hello World\n"
+  |-CallExpr 'void'                            <-- f(n)
+  | |-ImplicitCastExpr <FunctionToPointerDecay>
+  | | `-DeclRefExpr Function 'f'
+  | `-ImplicitCastExpr <LValueToRValue>
+  |   `-DeclRefExpr Var 'n'
+  `-ReturnStmt
+    `-IntegerLiteral 'int' 0
+\end{Verbatim}
+
+\subsection{Interesting nodes and their hierarchy}
+
+\paragraph{1. \texttt{ForStmt}.}
+A \texttt{for} loop is one node with four fixed child slots, in order: \emph{init} (\texttt{DeclStmt}), \emph{condition variable} (here \texttt{<<<NULL>>>}, used only for \texttt{for (...; T v = ...; )} forms), \emph{condition} (\texttt{BinaryOperator <}), \emph{increment} (\texttt{UnaryOperator ++}), and finally the \emph{body}. In the dump the body is a \texttt{CompoundStmt}, whose only child is the inner \texttt{ForStmt}. This is how loop nesting appears in the tree: the inner loop is a child of the outer loop's body, not a sibling.
+
+\paragraph{2. \texttt{CallExpr}.}
+\texttt{printf("Hello World\textbackslash n")} is a \texttt{CallExpr} whose first child is the callee expression and the remaining children are the arguments. The callee is not a bare \texttt{DeclRefExpr}: Clang wraps it in an \texttt{ImplicitCastExpr <FunctionToPointerDecay>}, so the node under \texttt{CallExpr} is the cast, and the \texttt{DeclRefExpr} naming \texttt{printf} is its child. The string argument is likewise wrapped in an \texttt{ArrayToPointerDecay} cast above the \texttt{StringLiteral}. A matcher for ``calls to \texttt{printf}'' therefore has to look through these implicit nodes, which \texttt{callee(functionDecl(hasName("printf")))} does for us.
+
+\paragraph{3. \texttt{DeclStmt} / \texttt{VarDecl} / \texttt{DeclRefExpr}.}
+\texttt{int i = 0;} is a \texttt{DeclStmt} (a statement) holding a \texttt{VarDecl} (the declaration), whose child is the initializer \texttt{IntegerLiteral}. Every later use of \texttt{i} is a \texttt{DeclRefExpr}, which does not copy the variable but \emph{refers} to a particular \texttt{VarDecl} (the dump shows \texttt{Var 0x...~'i'} before the addresses were stripped). The program declares \texttt{i} twice, so there are two distinct \texttt{VarDecl} nodes; each \texttt{DeclRefExpr} points to the nearest enclosing one, so the inner loop's \texttt{i} shadows the outer one. This declaration/reference link is exactly what is needed to decide whether a local variable is ever used (Part 2, pass 3).
+
+\paragraph{Other nodes worth noting.}
+\texttt{ImplicitCastExpr <LValueToRValue>} appears around every variable that is \emph{read} (\texttt{i} and \texttt{n} in \texttt{i < n}) but not around \texttt{i} in \texttt{i++}, where it is modified in place.
+\texttt{CompoundStmt} is the \texttt{\{ ... \}} block and just holds a list of statements.
+The overall root of this dump is \texttt{FunctionDecl}, which sits under the \texttt{TranslationUnitDecl}.
+
+\section{Traversal mechanisms in Clang}
+
+\paragraph{\texttt{RecursiveASTVisitor}.}
+A CRTP base class. Derive from \texttt{RecursiveASTVisitor<Derived>} and define \texttt{VisitXxx(Xxx *node)} for the node kinds of interest; the base class walks the whole tree depth-first and calls them. Three layers exist per node kind: \texttt{TraverseXxx} (controls descent into children and can prune a subtree by not calling the base), \texttt{WalkUpFromXxx} (calls the \texttt{Visit} methods for the node and its base classes), and \texttt{VisitXxx} (what you usually override; return \texttt{false} to stop the whole traversal). Best for imperative analyses that need state across the walk.
+
+\paragraph{AST matchers with \texttt{MatchFinder}.}
+A declarative approach: describe the pattern as a composition of matchers (node matchers such as \texttt{forStmt}, \texttt{varDecl}; narrowing matchers such as \texttt{hasName}; traversal matchers such as \texttt{hasBody}, \texttt{hasCondition}, \texttt{hasDescendant}) and attach a \texttt{MatchCallback} to it with \texttt{MatchFinder::addMatcher}. \texttt{.bind("id")} labels sub-nodes, which the callback's \texttt{run} retrieves with \texttt{Result.Nodes.getNodeAs<T>("id")}. The finder does the walk internally. Concise for local patterns, and what Part 2 uses.
+
+\paragraph{\texttt{ASTConsumer} and \texttt{ASTFrontendAction}.}
+The hook by which a tool gets the AST at all. A \texttt{FrontendAction} creates an \texttt{ASTConsumer}, whose \texttt{HandleTranslationUnit(ASTContext\&)} (or \texttt{HandleTopLevelDecl}) is called once parsing finishes. From there one typically starts a \texttt{RecursiveASTVisitor} from \texttt{Context.getTranslationUnitDecl()}. \texttt{newFrontendActionFactory(\&Finder)} in a LibTooling \texttt{main} hides this for matchers.
+
+\paragraph{\texttt{StmtVisitor} / \texttt{DeclVisitor}.}
+Dispatch-only visitors: \texttt{Visit(node)} calls the \texttt{VisitXxx} for that node's dynamic type, but \emph{does not} recurse; you recurse manually via \texttt{node->children()}. Used inside Clang itself (e.g.\ the AST printer, code generation) when the traversal order is custom.
+
+\paragraph{Direct child iteration and parent queries.}
+Every \texttt{Stmt} exposes \texttt{children()}, and a \texttt{DeclContext} exposes \texttt{decls()}, for a hand-written walk. Clang nodes have no parent pointer; \texttt{ASTContext::getParents(node)} (backed by the \texttt{ParentMapContext}) computes the parent map on demand for upward navigation.
+
+\section{Part 2: AST-matcher passes}
+
+All three checks are in a single LibTooling tool built from \texttt{pass.cpp} (target \texttt{Simple\_Pass}), run as \texttt{Simple\_Pass file.cpp --}. Each check has a test input in \texttt{tests/}.
+
+\subsection{Build and run}
+\begin{Verbatim}[fontsize=\footnotesize]
+cp -r 2-ast-matcher-passes ~/llvm-project/clang-tools-extra/Mypass
+# add:  add_subdirectory(Mypass)  to clang-tools-extra/CMakeLists.txt
+cd ~/llvm-project/build && cmake . && make -j4 Simple_Pass
+bin/Simple_Pass ../clang-tools-extra/Mypass/tests/assign_in_condition.cpp --
+\end{Verbatim}
+Tested against LLVM/Clang 17.0.6.
+
+\subsection{Pass 1: assignment inside a condition}
+\textbf{Goal.} Flag \texttt{if (x = 5)}, where \texttt{==} was probably intended.\\
+\textbf{Approach.} \todo{describe the matcher actually used: which statement kinds (if/while/for/do/conditional operator), how plain \texttt{=} vs.\ compound assignment is treated, and how double-parenthesised \texttt{if ((x = f()))} is handled}\\
+\textbf{Test.} \texttt{tests/assign\_in\_condition.cpp}\\
+\textbf{Output.} \todo{paste output}
+
+\subsection{Pass 2: empty loop body}
+\textbf{Goal.} Flag \texttt{for}, \texttt{while} and \texttt{do-while} loops whose body is an empty compound statement \texttt{\{\}}.\\
+\textbf{Approach.} \todo{describe the matcher actually used, and whether the \texttt{for (...);} (\texttt{NullStmt}) form is reported}\\
+\textbf{Test.} \texttt{tests/empty\_loop\_body.cpp}\\
+\textbf{Output.} \todo{paste output}
+
+\subsection{Pass 3: unused local variable}
+\textbf{Goal.} Flag local variables that are declared but never referenced in their enclosing function.\\
+\textbf{Approach.} \todo{describe how declarations and \texttt{DeclRefExpr}s are matched per function, and the policy for write-only variables, parameters, \texttt{static} locals}\\
+\textbf{Test.} \texttt{tests/unused\_local.cpp}\\
+\textbf{Output.} \todo{paste output}
+
+\section{Limitations}
+\todo{list what each pass does not catch (macros, templates, \ldots)}
+
+\section*{Note on AI use}
+The text of this write-up was drafted with AI assistance (Claude). The passes themselves were written by the authors.
+
+\end{document}

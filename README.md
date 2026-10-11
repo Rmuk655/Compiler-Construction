@@ -12,6 +12,9 @@ Compiler construction work done alongside **CS3423 – Compilers 2** (IIT Hydera
 | [`Experiments/llvm-ir-and-cfg/`](Experiments/llvm-ir-and-cfg) | Emitting LLVM IR from C/C++, and dumping/visualising control-flow graphs | Clang, `opt`, Graphviz |
 | [`Experiments/kaleidoscope-frontend/`](Experiments/kaleidoscope-frontend) | Flex/Bison front end that builds an AST and generates LLVM IR (modified Kaleidoscope tutorial) | Flex, Bison, LLVM |
 | [`Experiments/clang-ast-matchers/`](Experiments/clang-ast-matchers) | A Clang tool using AST matchers to find function definitions and variable declarations | Clang LibTooling |
+| [`Clang-AST-Passes/`](Clang-AST-Passes) | Mini assignment: AST dump and node analysis (`1-ast-dump/`), plus Clang AST-matcher passes for assignment-in-condition, empty loop bodies and unused locals (`2-ast-matcher-passes/`); includes the write-up PDF | Clang LibTooling, CMake |
+| [`astmatch-skeleton/`](astmatch-skeleton) | Starter skeleton for a Clang AST-matcher tool (`astmatch.cpp` plus `CMakeLists.txt`), provided by the TA; matchers are left to fill in | Clang LibTooling, CMake |
+| [`lex-yacc-mini-language-ta-skeleton/`](lex-yacc-mini-language-ta-skeleton) | Starting skeleton for the lex/yacc mini-language lab (question, partial lexer/parser, sample input), provided by the TA; the worked solution is in `Experiments/lex-yacc/mini-language` | Flex, Bison |
 
 Setup notes for the environment (LLVM 14 / 17, flex, commands used) are in [`Experiments/setup-notes.txt`](Experiments/setup-notes.txt).
 

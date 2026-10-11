@@ -15,5 +15,5 @@ int main(){
     test();
 }
 
-// /bin/clang -Xclang -ast-dump -Xclang -ast-dump-filter=1 ast dump-filter=test -fsyntax-only '/Labs/AST/test.cpp'
-// ./clang -Xclang -ast-dump -Xclang -ast-dump-filter-test -fsyntax-only '/Labs/AST/test.cpp'
+// Dump the AST of test() with clang (adjust the path to your clang build):
+//   clang -Xclang -ast-dump -Xclang -ast-dump-filter=test -fsyntax-only test.cpp

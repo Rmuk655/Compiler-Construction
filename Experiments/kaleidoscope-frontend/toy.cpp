@@ -146,7 +146,6 @@ Function *FunctionAST::codegen() {
   return nullptr;
 }
 
-
 //===----------------------------------------------------------------------===//
 // Top-Level handlers and driver
 //===----------------------------------------------------------------------===//
@@ -181,7 +180,7 @@ void HandleExtern(std::unique_ptr<PrototypeAST> ProtoAST) {
 void HandleTopLevelExpression(std::unique_ptr<ExprAST> E) {
   // Evaluate a top-level expression into an anonymous function.
   auto Proto = std::make_unique<PrototypeAST>("__anon_expr",
-                                               std::vector<std::string>());
+                                              std::vector<std::string>());
   auto FnAST = std::make_unique<FunctionAST>(std::move(Proto), std::move(E));
   if (auto *FnIR = FnAST->codegen()) {
     fprintf(stderr, "Read top-level expression:");

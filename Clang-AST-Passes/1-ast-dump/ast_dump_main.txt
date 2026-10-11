@@ -1,0 +1,45 @@
+Dumping main:
+FunctionDecl <nested_loops.cpp:9:1, line:18:1> line:9:5 main 'int ()'
+`-CompoundStmt <col:11, line:18:1>
+  |-DeclStmt <line:10:5, col:15>
+  | `-VarDecl <col:5, col:13> col:9 used n 'int' cinit
+  |   `-IntegerLiteral <col:13> 'int' 10
+  |-ForStmt <line:11:5, line:15:5>
+  | |-DeclStmt <line:11:9, col:18>
+  | | `-VarDecl <col:9, col:17> col:13 used i 'int' cinit
+  | |   `-IntegerLiteral <col:17> 'int' 0
+  | |-<<<NULL>>>
+  | |-BinaryOperator <col:20, col:24> 'bool' '<'
+  | | |-ImplicitCastExpr <col:20> 'int' <LValueToRValue>
+  | | | `-DeclRefExpr <col:20> 'int' lvalue Var 'i' 'int'
+  | | `-ImplicitCastExpr <col:24> 'int' <LValueToRValue>
+  | |   `-DeclRefExpr <col:24> 'int' lvalue Var 'n' 'int'
+  | |-UnaryOperator <col:27, col:28> 'int' postfix '++'
+  | | `-DeclRefExpr <col:27> 'int' lvalue Var 'i' 'int'
+  | `-CompoundStmt <col:31, line:15:5>
+  |   `-ForStmt <line:12:9, line:14:9>
+  |     |-DeclStmt <line:12:13, col:22>
+  |     | `-VarDecl <col:13, col:21> col:17 used i 'int' cinit
+  |     |   `-IntegerLiteral <col:21> 'int' 0
+  |     |-<<<NULL>>>
+  |     |-BinaryOperator <col:24, col:28> 'bool' '<'
+  |     | |-ImplicitCastExpr <col:24> 'int' <LValueToRValue>
+  |     | | `-DeclRefExpr <col:24> 'int' lvalue Var 'i' 'int'
+  |     | `-ImplicitCastExpr <col:28> 'int' <LValueToRValue>
+  |     |   `-DeclRefExpr <col:28> 'int' lvalue Var 'n' 'int'
+  |     |-UnaryOperator <col:31, col:32> 'int' postfix '++'
+  |     | `-DeclRefExpr <col:31> 'int' lvalue Var 'i' 'int'
+  |     `-CompoundStmt <col:35, line:14:9>
+  |       `-CallExpr <line:13:13, col:35> 'int'
+  |         |-ImplicitCastExpr <col:13> 'int (*)(const char *__restrict, ...)' <FunctionToPointerDecay>
+  |         | `-DeclRefExpr <col:13> 'int (const char *__restrict, ...)' lvalue Function 'printf' 'int (const char *__restrict, ...)'
+  |         `-ImplicitCastExpr <col:20> 'const char *' <ArrayToPointerDecay>
+  |           `-StringLiteral <col:20> 'const char[13]' lvalue "Hello World\n"
+  |-CallExpr <line:16:5, col:8> 'void'
+  | |-ImplicitCastExpr <col:5> 'void (*)(int)' <FunctionToPointerDecay>
+  | | `-DeclRefExpr <col:5> 'void (int)' lvalue Function 'f' 'void (int)'
+  | `-ImplicitCastExpr <col:7> 'int' <LValueToRValue>
+  |   `-DeclRefExpr <col:7> 'int' lvalue Var 'n' 'int'
+  `-ReturnStmt <line:17:5, col:12>
+    `-IntegerLiteral <col:12> 'int' 0
+

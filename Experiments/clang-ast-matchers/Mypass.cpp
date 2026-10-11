@@ -27,19 +27,18 @@ DeclarationMatcher var = varDecl(unless(parmVarDecl())).bind("variable");
 
 class Simple_Pass_Handler : public MatchFinder::MatchCallback {
 public:
-    int count =0;
-    int Var_count =0;
+  int count = 0;
+  int Var_count = 0;
   virtual void run(const MatchFinder::MatchResult &Result) override {
 
     if (const FunctionDecl *FD = Result.Nodes.getNodeAs<FunctionDecl>("function")) {
-        count++;
-      outs() << "Function name: " << FD->getNameAsString() <<" "<< count<<"\n";
+      count++;
+      outs() << "Function name: " << FD->getNameAsString() << " " << count << "\n";
     }
-    if(const VarDecl *VD = Result.Nodes.getNodeAs<VarDecl>("variable")){
+    if (const VarDecl *VD = Result.Nodes.getNodeAs<VarDecl>("variable")) {
       Var_count++;
-      outs() << "Variable name: " << VD->getNameAsString() <<" "<< Var_count<<"\n";
+      outs() << "Variable name: " << VD->getNameAsString() << " " << Var_count << "\n";
     }
-    
   }
 };
 
@@ -64,5 +63,5 @@ int main(int argc, const char **argv) {
 
   Tool.run(newFrontendActionFactory(&Finder).get());
 
-  outs() << "The Total VarCount " << Handler.Var_count <<"\n";
+  outs() << "The Total VarCount " << Handler.Var_count << "\n";
 }

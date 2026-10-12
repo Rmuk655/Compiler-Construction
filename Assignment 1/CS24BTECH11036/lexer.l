@@ -12,7 +12,7 @@ UNDERSCORE  "_"
 SCOPE_OPEN  "["
 SCOPE_CLOSE "]"
 SEPARATOR   ";"
-SPECIAL_SYMBOLS "@"|"#"|"*"|"-"|"+"|"/"|"_"|":"|"\""
+SPECIAL_SYMBOLS "@"|"#"|"*"|"-"|"+"|"/"|"_"|":"|"\""|"\\"
 SPECIAL ["@", "#", "*", "-", "+", "_", ":", "\"]
 SPECIAL_EX ["@", "#", "*", "-", "+", "/", "_", "\"]
 DATATYPE    ["integer", "character", "string"]
@@ -22,7 +22,7 @@ UNARY_OP ["_"]
 RELOP    ["gt", "lt", "gteq", "lteq"]
 LOGICAL  ["and", "or"]
 WHITESPACE [" ", "\n", "\t"]
-BLANK [" "]
+BLANK " "
 SPACE    [" ", "\t"]
 STRING   ({LETTER}|{SPECIAL_SYMBOLS})({LETTER}|{WHITESPACE}|{SPECIAL_SYMBOLS})+
 ALL ({DIGIT}|{LETTER}|{SPECIAL_SYMBOLS}|{SCOPE_OPEN}|{SCOPE_CLOSE}|{WHITESPACE})+
@@ -30,8 +30,8 @@ ALLCOM ({DIGIT}|{LETTER}|{SPECIAL_SYMBOLS}|{SCOPE_OPEN}|{SCOPE_CLOSE}|{SPACE})*
 %%
 " "|"\n"|"\t"|{BLANK}+                                     ;
 "//"{ALLCOM}"\n"                                           ;
-"\""{ALL}"\""                                              { printf("STRING: %s\n", yytext); }
-"pp"{NUMBER}":"|" pp"{NUMBER}":"                           { printf("LABEL: %s\n", yytext); }
+\"([^"\\\n]|\\.)*\"                                  { printf("STRING: %s\n", yytext); }
+"pp"{NUMBER}":"|" pp"{NUMBER}":"                           { printf("LABEL: %s\n", yytext + (yytext[0] == ' ')); }
 "do"|"null"|"repeat"|"in case that"|"otherwise"|"jump to"  { printf("KEYWORD: %s\n", yytext); }
 {NUMBER}                                                   { printf("NUMBER: %s\n", yytext); }
 "gt"|"lt"|"gteq"|"lteq"         { printf("RELOP: %s\n", yytext); }

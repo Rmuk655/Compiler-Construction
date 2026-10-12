@@ -1,5 +1,7 @@
 # Compiler Construction
 
+[![CI](https://github.com/Rmuk655/Compiler-Construction/actions/workflows/ci.yml/badge.svg)](https://github.com/Rmuk655/Compiler-Construction/actions/workflows/ci.yml)
+
 Compiler construction work done alongside **CS3423 – Compilers 2** (IIT Hyderabad): lexers and parsers, LLVM IR, and Clang tooling. Updated as the work progresses.
 
 ## Contents

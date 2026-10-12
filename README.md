@@ -5,7 +5,7 @@ Assignments from Compilers 1 (CS3320, IIT Hyderabad): a Flex lexer and hand-writ
 | Assignment | Contents | Tools |
 |---|---|---|
 | [`Assignment 1/`](Assignment%201/CS24BTECH11036) | Lexer for a small "pp" language: labels, keywords, data types, identifiers, numbers, strings with escapes, operators, scope brackets. 12 test cases with expected token streams. | Flex, GCC |
-| [`Assignment 2/`](Assignment%202/CS24BTECH11036) | LLVM IR for C programs: global and local variables, loops and conditionals, functions, arrays and structs, type casts, and a ternary expression at `-O0` and `-O1`. Each `.c` file has its generated `.ll` next to it, and `Report.pdf` explains the IR. | Clang/LLVM |
+| [`Assignment 2/`](Assignment%202/CS24BTECH11036) | LLVM IR for C programs: globals and locals, if/else and loops, function calls, type casts, arrays, structs, and a ternary expression at `-O0` and `-O1`. Each `.c` file has its generated `.ll` next to it, and `Report.pdf` explains the IR. | Clang/LLVM |
 
 ## Assignment 1: lexer
 
@@ -26,6 +26,6 @@ clang -S -emit-llvm -O0 Q1a.c -o Q1a.ll
 
 | Folder | Topic |
 |---|---|
-| `Q1/` | Globals and locals, expression evaluation, control flow, loops |
-| `Q2/` | Functions and calls, arrays/structs and their IR |
+| `Q1/` | `Q1a` global and local integers, `Q1b` if/else, `Q1c` function call, `Q1d` narrowing and widening casts |
+| `Q2/` | `Q2a` static and `malloc`-allocated arrays, `Q2bi` and `Q2bii` structs |
 | `Q3/` | Ternary operator: IR at `-O0` versus `-O1` |

@@ -13,6 +13,8 @@
 #include "clang/Lex/HeaderSearch.h"
 #include "clang/Basic/FileManager.h"
 
+#include <set>
+
 using namespace std;
 using namespace clang;
 using namespace clang::tooling;
@@ -22,25 +24,52 @@ using namespace llvm;
 static llvm::cl::OptionCategory Simple_Pass("Simple_Pass options");
 
 // write matchers here..
+// 1. Find assignments that occur inside conditional expressions and could indicate accidental use of “=” instead of “ ==”
+StatementMatcher ifcondassgn = ifStmt(hasCondition(ignoringParenImpCasts(binaryOperator(hasOperatorName("="))))).bind("assignment");
+StatementMatcher forcondassgn = forStmt(hasCondition(ignoringParenImpCasts(binaryOperator(hasOperatorName("="))))).bind("assignment");
+StatementMatcher whilecondassgn = whileStmt(hasCondition(ignoringParenImpCasts(binaryOperator(hasOperatorName("="))))).bind("assignment");
+StatementMatcher docondassgn = doStmt(hasCondition(ignoringParenImpCasts(binaryOperator(hasOperatorName("="))))).bind("assignment");
+StatementMatcher condassgn = conditionalOperator(hasCondition(ignoringParenImpCasts(binaryOperator(hasOperatorName("="))))).bind("assignment");
+StatementMatcher asscondcheck = stmt(anyOf(ifcondassgn, forcondassgn, whilecondassgn, docondassgn, condassgn), isExpansionInMainFile());
+// 2. Detect for, while, and do-while loops whose bodies are empty compound statements.
+StatementMatcher for_empty = forStmt(hasBody(compoundStmt(statementCountIs(0))), isExpansionInMainFile()).bind("loop");
+StatementMatcher while_empty = whileStmt(hasBody(compoundStmt(statementCountIs(0))), isExpansionInMainFile()).bind("loop");
+StatementMatcher do_while_empty = doStmt(hasBody(compoundStmt(statementCountIs(0))), isExpansionInMainFile()).bind("loop");
+// 3. Identify local variables that are declared but never referenced elsewhere in their enclosing function.
+DeclarationMatcher decls = varDecl(hasLocalStorage(), unless(parmVarDecl()), isExpansionInMainFile()).bind("var");
+StatementMatcher refs = declRefExpr(to(varDecl(hasLocalStorage()))).bind("ref");
 
-class Simple_Pass_Handler : public MatchFinder::MatchCallback {
+class Simple_Pass_Handler : public MatchFinder::MatchCallback
+{
 public:
-    int count =0;
-    int Var_count =0;
-  virtual void run(const MatchFinder::MatchResult &Result) override {
-
-    // if (const FunctionDecl *FD = Result.Nodes.getNodeAs<FunctionDecl>("function")) {
-    //     count++;
-    //   outs() << "Function name: " << FD->getNameAsString() <<" "<< count<<"\n";
-    // }
-    
+  set<const VarDecl *> DeclaredVars, ReferencedVars;
+  virtual void run(const MatchFinder::MatchResult &Result) override
+  {
+    if (auto *A = Result.Nodes.getNodeAs<BinaryOperator>("assignment"))
+    {
+      A->getBeginLoc().printToString(*Result.SourceManager);
+    }
+    else if (auto *L = Result.Nodes.getNodeAs<Stmt>("loop"))
+    {
+      L->getBeginLoc().printToString(*Result.SourceManager);
+    }
+    else if (auto *V = Result.Nodes.getNodeAs<VarDecl>("var"))
+    {
+      DeclaredVars.insert(V);
+    }
+    else if (auto *R = Result.Nodes.getNodeAs<DeclRefExpr>("ref"))
+    {
+      ReferencedVars.insert(cast<VarDecl>(R->getDecl()));
+    }
   }
 };
 
-int main(int argc, const char **argv) {
+int main(int argc, const char **argv)
+{
 
   auto ExpectedParser = CommonOptionsParser::create(argc, argv, Simple_Pass);
-  if (!ExpectedParser) {
+  if (!ExpectedParser)
+  {
     // Fail gracefully for unsupported options.
     errs() << ExpectedParser.takeError();
     return 1;
@@ -53,9 +82,20 @@ int main(int argc, const char **argv) {
 
   MatchFinder Finder;
 
-  Finder.addMatcher(forstmt, &Handler);
+  Finder.addMatcher(asscondcheck, &Handler);
+  Finder.addMatcher(for_empty, &Handler);
+  Finder.addMatcher(while_empty, &Handler);
+  Finder.addMatcher(do_while_empty, &Handler);
+  Finder.addMatcher(decls, &Handler);
+  Finder.addMatcher(refs, &Handler);
 
   Tool.run(newFrontendActionFactory(&Finder).get());
 
-  outs() << "The Total VarCount " << Handler.Var_count <<"\n";
+  for (auto *V : Handler.DeclaredVars)
+  {
+    if (!Handler.ReferencedVars.count(V))
+    {
+      outs() << "Unused variable: " << V->getName() << "\n";
+    }
+  }
 }

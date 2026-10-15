@@ -3,6 +3,11 @@
 CS3423 Compilers II, IIT Hyderabad. Team: CS24BTECH11030, CS24BTECH11036.
 The PDF write-up is `Mini-Asgn-4-CS24BTECH11030-CS24BTECH11036.pdf`.
 
+| Roll no. | Work |
+|---|---|
+| CS24BTECH11030 | Part 1 (AST dump and node analysis), traversal mechanisms |
+| CS24BTECH11036 | Part 2 (AST-matcher passes, tests, write-up) |
+
 ## Layout
 
 | Path | Contents |

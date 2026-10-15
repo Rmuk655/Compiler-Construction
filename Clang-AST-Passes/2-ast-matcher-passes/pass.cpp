@@ -25,11 +25,11 @@ static llvm::cl::OptionCategory Simple_Pass("Simple_Pass options");
 
 // write matchers here..
 // 1. Find assignments that occur inside conditional expressions and could indicate accidental use of “=” instead of “ ==”
-StatementMatcher ifcondassgn = ifStmt(hasCondition(ignoringParenImpCasts(binaryOperator(hasOperatorName("="))))).bind("assignment");
-StatementMatcher forcondassgn = forStmt(hasCondition(ignoringParenImpCasts(binaryOperator(hasOperatorName("="))))).bind("assignment");
-StatementMatcher whilecondassgn = whileStmt(hasCondition(ignoringParenImpCasts(binaryOperator(hasOperatorName("="))))).bind("assignment");
-StatementMatcher docondassgn = doStmt(hasCondition(ignoringParenImpCasts(binaryOperator(hasOperatorName("="))))).bind("assignment");
-StatementMatcher condassgn = conditionalOperator(hasCondition(ignoringParenImpCasts(binaryOperator(hasOperatorName("="))))).bind("assignment");
+StatementMatcher ifcondassgn = ifStmt(hasCondition(ignoringParenImpCasts(binaryOperator(hasOperatorName("=")).bind("assignment"))));
+StatementMatcher forcondassgn = forStmt(hasCondition(ignoringParenImpCasts(binaryOperator(hasOperatorName("=")).bind("assignment"))));
+StatementMatcher whilecondassgn = whileStmt(hasCondition(ignoringParenImpCasts(binaryOperator(hasOperatorName("=")).bind("assignment"))));
+StatementMatcher docondassgn = doStmt(hasCondition(ignoringParenImpCasts(binaryOperator(hasOperatorName("=")).bind("assignment"))));
+StatementMatcher condassgn = conditionalOperator(hasCondition(ignoringParenImpCasts(binaryOperator(hasOperatorName("=")).bind("assignment"))));
 StatementMatcher asscondcheck = stmt(anyOf(ifcondassgn, forcondassgn, whilecondassgn, docondassgn, condassgn), isExpansionInMainFile());
 // 2. Detect for, while, and do-while loops whose bodies are empty compound statements.
 StatementMatcher for_empty = forStmt(hasBody(compoundStmt(statementCountIs(0))), isExpansionInMainFile()).bind("loop");
@@ -47,11 +47,11 @@ public:
   {
     if (auto *A = Result.Nodes.getNodeAs<BinaryOperator>("assignment"))
     {
-      A->getBeginLoc().printToString(*Result.SourceManager);
+      outs() << A->getBeginLoc().printToString(*Result.SourceManager) << "\n";
     }
     else if (auto *L = Result.Nodes.getNodeAs<Stmt>("loop"))
     {
-      L->getBeginLoc().printToString(*Result.SourceManager);
+      outs() << L->getBeginLoc().printToString(*Result.SourceManager) << "\n";
     }
     else if (auto *V = Result.Nodes.getNodeAs<VarDecl>("var"))
     {

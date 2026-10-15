@@ -90,23 +90,25 @@ Verified on 15 Oct 2026 against LLVM 17.0.6 (`MA4_Pass` target, built from the c
 
 - [x] Part 1 write-up
 - [x] `pass.cpp` compiles, links and runs on all three tests
-- [x] Pass 3 output matches the expectation (`Unused variable: x` twice; `n` and `i` are correctly not reported)
-- [ ] Pass 1 prints nothing yet, see "Known issues"
-- [ ] Pass 2 prints nothing yet, see "Known issues"
+- [x] Pass 1 reports line 5 of `assign_in_condition.cpp` (`if (n = 13)`) and not line 8 (`n == 10`)
+- [x] Pass 2 reports the empty `for` on line 6 of `empty_loop_body.cpp` and nothing else
+- [x] Pass 3 reports `Unused variable: x` twice on `unused_local.cpp`; `n` and `i` are not reported
 - [ ] Sample outputs added to the PDF
 
-### Known issues (to fix before submitting)
+### Extra checks (own test inputs, not committed)
 
-1. **Pass 1 never fires.** `.bind("assignment")` on lines 28-32 of `pass.cpp` is placed on the `ifStmt` / `forStmt` /
-   ... matcher, so it labels the whole `if`, not the assignment. The callback asks for a `BinaryOperator` under that
-   ID and gets `nullptr`. The bind has to go on the `binaryOperator(...)` inside `hasCondition`, or the callback has
-   to read the ID as a `Stmt`.
-2. **Passes 1 and 2 print nothing.** In `run()` the lines
-   `A->getBeginLoc().printToString(*Result.SourceManager);` and the same for `L` compute a string and throw it
-   away. They need `outs() << ... << "\n";`. Pass 2 does match (checked with a patched scratch copy: it
-   reports the empty `for`, `while` and `do` loops), it just does not print.
-3. Pass 3 does not distinguish "never read" from "never referenced": `int c = 3; c = 4;` counts as used.
-   This is a policy choice and should be stated in the PDF.
+- Pass 1 found `if (x = 5)`, `if ((x = g()))`, `while (x = y)`, `for (;x = y;)`, `do {} while (x = 0)` and
+  `(x = 3) ? 1 : 2`, and did not report `if (x == 5)`, `x = 7;` or `if (x)`.
+- Pass 2 found empty `for`, `while` and `do-while` bodies and skipped `for (...);`, `while (...);` and non-empty bodies.
+- Pass 3 found a plain unused local, an unused local in an inner block, and one inside a loop body. It did not
+  report used variables, a global, a `static` local or function parameters.
+
+### Behaviour to state in the PDF
+
+1. Pass 1 matches plain `=` only. `if (x += 2)` is not reported (`hasOperatorName("=")`).
+2. Pass 2 reports only an empty `{}`. `for (...);` (a `NullStmt` body) is not reported.
+3. Pass 3 treats any reference as a use, so `int c = 3; c = 4;` (written, never read) is not reported.
+4. Output for passes 1 and 2 is the source location (`file:line:col`) of the offending statement.
 
 ## Notes
 

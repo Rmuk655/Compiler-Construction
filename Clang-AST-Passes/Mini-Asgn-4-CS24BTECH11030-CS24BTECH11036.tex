@@ -137,24 +137,44 @@ Tested against LLVM/Clang 17.0.6.
 
 \subsection{Pass 1: assignment inside a condition}
 \textbf{Goal.} Flag \texttt{if (x = 5)}, where \texttt{==} was probably intended.\\
-\textbf{Approach.} \todo{describe the matcher actually used: which statement kinds (if/while/for/do/conditional operator), how plain \texttt{=} vs.\ compound assignment is treated, and how double-parenthesised \texttt{if ((x = f()))} is handled}\\
+\textbf{Approach.} The five statement kinds that have a condition (\texttt{if}, \texttt{for}, \texttt{while}, \texttt{do-while} and the \texttt{?:} operator) each get a matcher of the form shown below (here for \texttt{if}), and the five are combined with \texttt{anyOf} under one \texttt{stmt(..., isExpansionInMainFile())}.
+\begin{Verbatim}[fontsize=\footnotesize,frame=single]
+ifStmt(hasCondition(ignoringParenImpCasts(
+    binaryOperator(hasOperatorName("=")).bind("assignment"))))
+\end{Verbatim}
+\texttt{ignoringParenImpCasts} is needed because in C++ the condition \texttt{n = 13} is wrapped in an \texttt{ImplicitCastExpr} (int to bool), and \texttt{if ((n = 13))} adds a \texttt{ParenExpr}; both forms are therefore found. Only plain \texttt{=} is matched; compound assignments such as \texttt{+=} are not reported. The bind ID is placed on the \texttt{binaryOperator}, so the callback receives the assignment itself and prints its source location.\\
 \textbf{Test.} \texttt{tests/assign\_in\_condition.cpp}\\
-\textbf{Output.} \todo{paste output}
+\textbf{Output.} Only the assignment on line 5 is reported; the comparison \texttt{n == 10} on line 8 is not.
+\begin{Verbatim}[fontsize=\footnotesize,frame=single]
+tests/assign_in_condition.cpp:5:8
+\end{Verbatim}
 
 \subsection{Pass 2: empty loop body}
 \textbf{Goal.} Flag \texttt{for}, \texttt{while} and \texttt{do-while} loops whose body is an empty compound statement \texttt{\{\}}.\\
-\textbf{Approach.} \todo{describe the matcher actually used, and whether the \texttt{for (...);} (\texttt{NullStmt}) form is reported}\\
+\textbf{Approach.} \texttt{forStmt}, \texttt{whileStmt} and \texttt{doStmt} each use \texttt{hasBody(compoundStmt(statementCountIs(0)))}, i.e.\ the body must be a block containing no statements, and all three bind the same ID \texttt{loop}. A loop whose body is a single statement or a bare \texttt{;} (\texttt{NullStmt}, as in \texttt{for (...);}) is deliberately not reported, since the question asks for empty compound statements. The matchers are restricted to the main file.\\
 \textbf{Test.} \texttt{tests/empty\_loop\_body.cpp}\\
-\textbf{Output.} \todo{paste output}
+\textbf{Output.} Only the empty \texttt{for} on line 6 is reported; the \texttt{do} and \texttt{while} loops in the test have non-empty bodies.
+\begin{Verbatim}[fontsize=\footnotesize,frame=single]
+tests/empty_loop_body.cpp:6:5
+\end{Verbatim}
 
 \subsection{Pass 3: unused local variable}
 \textbf{Goal.} Flag local variables that are declared but never referenced in their enclosing function.\\
-\textbf{Approach.} \todo{describe how declarations and \texttt{DeclRefExpr}s are matched per function, and the policy for write-only variables, parameters, \texttt{static} locals}\\
+\textbf{Approach.} Two matchers feed one callback: \texttt{varDecl(hasLocalStorage(), unless(parmVarDecl()))} records every local variable declaration, and \texttt{declRefExpr(to(varDecl(hasLocalStorage())))} records every use. Each variable has exactly one \texttt{VarDecl} node, and each use is a \texttt{DeclRefExpr} whose \texttt{getDecl()} points back to it, so the \texttt{VarDecl*} identifies the variable (two variables both called \texttt{i} are different pointers). The callback keeps a set of declared and a set of referenced pointers; after \texttt{Tool.run} the variables in the first set but not in the second are printed. The report cannot be produced inside the callback because a use may appear after the declaration. Parameters, globals and \texttt{static} locals are not reported. Any reference counts as a use, so a variable that is only written (\texttt{int c = 3; c = 4;}) is not reported.\\
 \textbf{Test.} \texttt{tests/unused\_local.cpp}\\
-\textbf{Output.} \todo{paste output}
+\textbf{Output.} The unused \texttt{x} in \texttt{f} and the unused \texttt{x} in \texttt{main} are both reported; \texttt{n} and \texttt{i} are used and are not.
+\begin{Verbatim}[fontsize=\footnotesize,frame=single]
+Unused variable: x
+Unused variable: x
+\end{Verbatim}
 
 \section{Limitations}
-\todo{list what each pass does not catch (macros, templates, \ldots)}
+\begin{itemize}
+\item Pass 1 reports only plain \texttt{=}; \texttt{if (x += 2)} is not reported. An assignment hidden in a function call or a lambda inside the condition is not found, because the matcher inspects only the condition expression itself.
+\item Pass 2 does not report a \texttt{for (...);} or \texttt{while (...);} loop (a \texttt{NullStmt} body) or a body containing only an empty nested block.
+\item Pass 3 counts any reference as a use, so write-only variables are missed; it does not report unused parameters, globals or \texttt{static} locals, and the report prints only the variable name (no source location).
+\item All passes ignore code that comes from headers (\texttt{isExpansionInMainFile}), so problems inside included files are not reported. Macros and templates were not tested.
+\end{itemize}
 
 \section*{Note on AI use}
 The text of this write-up was drafted with AI assistance (Claude). The passes themselves were written by the authors.

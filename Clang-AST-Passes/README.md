@@ -1,120 +1,246 @@
-# Mini Assignment 4: Clang AST Passes
+# Mini-Assignment 4: Clang AST Passes
 
-CS3423 Compilers II, IIT Hyderabad. Team: CS24BTECH11030, CS24BTECH11036.
-The PDF write-up is `Mini-Asgn-4-CS24BTECH11030-CS24BTECH11036.pdf`.
+CS3423 Compilers II, IIT Hyderabad. CS24BTECH11030, CS24BTECH11036.
 
-| Roll no. | Work |
-|---|---|
-| CS24BTECH11030 | Part 1 (AST dump and node analysis), traversal mechanisms |
-| CS24BTECH11036 | Part 2 (AST-matcher passes, tests, write-up) |
+This README is also submitted as `Mini-Asgn-4-CS24BTECH11030-CS24BTECH11036.pdf` (same content).
 
-## Layout
+**Contributions.** CS24BTECH11030: Part 1 (AST dump and node analysis) and the traversal mechanisms section.
+CS24BTECH11036: Part 2 (the three AST-matcher passes, their tests and write-up).
+
+## Files
 
 | Path | Contents |
 |---|---|
 | `1-ast-dump/nested_loops.cpp` | Program with nested loops and function calls, used for the AST dump |
 | `1-ast-dump/ast_dump_main.txt` | Raw `clang -ast-dump` output for `main` |
-| `2-ast-matcher-passes/pass.cpp` | The three AST-matcher passes in one LibTooling tool |
+| `2-ast-matcher-passes/pass.cpp` | The three AST-matcher passes in one tool |
 | `2-ast-matcher-passes/CMakeLists.txt` | Build file (not part of the `.cpp`-only submission) |
-| `2-ast-matcher-passes/tests/` | Inputs: `assign_in_condition.cpp`, `empty_loop_body.cpp`, `unused_local.cpp` |
+| `2-ast-matcher-passes/tests/` | Test inputs: `assign_in_condition.cpp`, `empty_loop_body.cpp`, `unused_local.cpp` |
 
-## Part 1: AST dump
+## Part 1: Exploring AST dumps
 
-```bash
-clang -fsyntax-only -Xclang -ast-dump -Xclang -ast-dump-filter=main 1-ast-dump/nested_loops.cpp
+### Program
+
+`nested_loops.cpp`: a function `f` with a loop, and a `main` with a doubly nested loop (both loops use a variable
+called `i`) and a call to `f`.
+
+```cpp
+#include <stdio.h>
+
+void f(int n){
+    for(int i = 0; i < n; i++){
+        printf("Hello World\n");
+    }
+}
+
+int main(){
+    int n = 10;
+    for(int i = 0; i < n; i++){
+        for(int i = 0; i < n; i++){
+            printf("Hello World\n");
+        }
+    }
+    f(n);
+    return 0;
+}
 ```
 
-`-ast-dump-filter=main` limits the dump to `main`, skipping the thousands of nodes pulled in by `<stdio.h>`.
-The analysis of the nodes and of Clang's traversal mechanisms is in the PDF.
+### Dumping the AST
+
+```bash
+clang -fsyntax-only -Xclang -ast-dump -Xclang -ast-dump-filter=main nested_loops.cpp
+```
+
+`-ast-dump-filter=main` limits the dump to `main`; without it the headers pulled in by `<stdio.h>` fill the output.
+The dump below has addresses and most source ranges removed (the raw output is `ast_dump_main.txt`).
+
+```
+FunctionDecl main 'int ()'
+`-CompoundStmt
+  |-DeclStmt
+  | `-VarDecl used n 'int' cinit
+  |   `-IntegerLiteral 'int' 10
+  |-ForStmt                                   <-- outer loop
+  | |-DeclStmt
+  | | `-VarDecl used i 'int' cinit
+  | |   `-IntegerLiteral 'int' 0
+  | |-<<<NULL>>>                              <-- no condition variable
+  | |-BinaryOperator 'bool' '<'
+  | | |-ImplicitCastExpr 'int' <LValueToRValue>
+  | | | `-DeclRefExpr 'int' lvalue Var 'i'
+  | | `-ImplicitCastExpr 'int' <LValueToRValue>
+  | |   `-DeclRefExpr 'int' lvalue Var 'n'
+  | |-UnaryOperator 'int' postfix '++'
+  | | `-DeclRefExpr 'int' lvalue Var 'i'
+  | `-CompoundStmt
+  |   `-ForStmt                               <-- inner loop
+  |     |-DeclStmt ... (VarDecl i)
+  |     |-<<<NULL>>>
+  |     |-BinaryOperator 'bool' '<'
+  |     |-UnaryOperator 'int' postfix '++'
+  |     `-CompoundStmt
+  |       `-CallExpr 'int'                     <-- printf(...)
+  |         |-ImplicitCastExpr <FunctionToPointerDecay>
+  |         | `-DeclRefExpr Function 'printf'
+  |         `-ImplicitCastExpr <ArrayToPointerDecay>
+  |           `-StringLiteral "Hello World\n"
+  |-CallExpr 'void'                            <-- f(n)
+  | |-ImplicitCastExpr <FunctionToPointerDecay>
+  | | `-DeclRefExpr Function 'f'
+  | `-ImplicitCastExpr <LValueToRValue>
+  |   `-DeclRefExpr Var 'n'
+  `-ReturnStmt
+    `-IntegerLiteral 'int' 0
+```
+
+### Interesting nodes and their hierarchy
+
+**1. `ForStmt`.** A `for` loop is one node with four fixed child slots, in order: *init* (`DeclStmt`),
+*condition variable* (here `<<<NULL>>>`, used only for `for (...; T v = ...; )` forms), *condition*
+(`BinaryOperator <`), *increment* (`UnaryOperator ++`), and finally the *body*. In the dump the body is a
+`CompoundStmt` whose only child is the inner `ForStmt`. This is how loop nesting appears in the tree: the inner
+loop is a child of the outer loop's body, not a sibling.
+
+**2. `CallExpr`.** `printf("Hello World\n")` is a `CallExpr` whose first child is the callee expression and the
+remaining children are the arguments. The callee is not a bare `DeclRefExpr`: Clang wraps it in an
+`ImplicitCastExpr <FunctionToPointerDecay>`, so the node under `CallExpr` is the cast, and the `DeclRefExpr`
+naming `printf` is its child. The string argument is likewise wrapped in an `ArrayToPointerDecay` cast above the
+`StringLiteral`. A matcher for "calls to `printf`" therefore has to look through these implicit nodes, which
+`callee(functionDecl(hasName("printf")))` does for us.
+
+**3. `DeclStmt` / `VarDecl` / `DeclRefExpr`.** `int i = 0;` is a `DeclStmt` (a statement) holding a `VarDecl`
+(the declaration), whose child is the initializer `IntegerLiteral`. Every later use of `i` is a `DeclRefExpr`,
+which does not copy the variable but *refers* to a particular `VarDecl`. The program declares `i` twice, so there
+are two distinct `VarDecl` nodes; each `DeclRefExpr` points to the nearest enclosing one, so the inner loop's `i`
+shadows the outer one. This declaration/reference link is what Part 2, pass 3, uses to decide whether a local
+variable is ever used.
+
+**Other nodes worth noting.** `ImplicitCastExpr <LValueToRValue>` appears around every variable that is *read*
+(`i` and `n` in `i < n`) but not around `i` in `i++`, where it is modified in place. `CompoundStmt` is the
+`{ ... }` block and just holds a list of statements. The root of this dump is `FunctionDecl`, which sits under
+the `TranslationUnitDecl`.
+
+## Traversal mechanisms in Clang
+
+**`RecursiveASTVisitor`.** A CRTP base class. Derive from `RecursiveASTVisitor<Derived>` and define
+`VisitXxx(Xxx *node)` for the node kinds of interest; the base class walks the whole tree depth-first and calls
+them. Three layers exist per node kind: `TraverseXxx` (controls descent into children and can prune a subtree by
+not calling the base), `WalkUpFromXxx` (calls the `Visit` methods for the node and its base classes), and
+`VisitXxx` (what you usually override; return `false` to stop the whole traversal). Best for analyses that need
+state across the walk.
+
+**AST matchers with `MatchFinder`.** A declarative approach: describe the pattern as a composition of matchers
+(node matchers such as `forStmt`, `varDecl`; narrowing matchers such as `hasName`; traversal matchers such as
+`hasBody`, `hasCondition`, `hasDescendant`) and attach a `MatchCallback` to it with `MatchFinder::addMatcher`.
+`.bind("id")` labels sub-nodes, which the callback's `run` retrieves with `Result.Nodes.getNodeAs<T>("id")`.
+The finder does the walk internally. Concise for local patterns, and what Part 2 uses.
+
+**`ASTConsumer` and `ASTFrontendAction`.** The hook by which a tool gets the AST at all. A `FrontendAction`
+creates an `ASTConsumer`, whose `HandleTranslationUnit(ASTContext&)` (or `HandleTopLevelDecl`) is called once
+parsing finishes. From there one typically starts a `RecursiveASTVisitor` from `Context.getTranslationUnitDecl()`.
+`newFrontendActionFactory(&Finder)` in a LibTooling `main` hides this for matchers.
+
+**`StmtVisitor` / `DeclVisitor`.** Dispatch-only visitors: `Visit(node)` calls the `VisitXxx` for that node's
+dynamic type, but *does not* recurse; you recurse manually via `node->children()`. Used inside Clang itself (the
+AST printer, code generation) when the traversal order is custom.
+
+**Direct child iteration and parent queries.** Every `Stmt` exposes `children()`, and a `DeclContext` exposes
+`decls()`, for a hand-written walk. Clang nodes have no parent pointer; `ASTContext::getParents(node)` (backed by
+the `ParentMapContext`) computes the parent map on demand for upward navigation.
 
 ## Part 2: AST-matcher passes
 
-One tool, `pass.cpp`, registers six matchers on a single `MatchFinder` with a single callback. Every matcher is
-restricted to the main file with `isExpansionInMainFile()`, so nodes coming from `<stdio.h>` and other headers
-are ignored. The callback tells the matchers apart by their bind ID.
+All three checks are in one tool, `pass.cpp`. Run it as `Simple_Pass file.cpp --` (`--` means "no compilation
+database"). Each check has its own test file in `tests/`. Every matcher only looks at the main file, so code from
+headers like `<stdio.h>` is ignored.
 
-| # | Detects | Matcher(s) | Bind ID | Test input |
-|---|---|---|---|---|
-| 1 | Assignment used as a condition (`if (x = 5)`), probably a typo for `==` | `ifStmt`, `forStmt`, `whileStmt`, `doStmt`, `conditionalOperator`, each with `hasCondition(ignoringParenImpCasts(binaryOperator(hasOperatorName("="))))`, combined with `anyOf` | `assignment` | `tests/assign_in_condition.cpp` |
-| 2 | `for` / `while` / `do-while` whose body is an empty `{}` | `forStmt` / `whileStmt` / `doStmt` with `hasBody(compoundStmt(statementCountIs(0)))` | `loop` | `tests/empty_loop_body.cpp` |
-| 3 | Local variable declared but never referenced | `varDecl(hasLocalStorage())` for declarations, `declRefExpr(to(varDecl(hasLocalStorage())))` for uses | `var`, `ref` | `tests/unused_local.cpp` |
+### Build and run
 
-### How each pass works
-
-**Pass 1.** A condition is not always the bare assignment: in C++ `if (n = 13)` wraps it in an
-`ImplicitCastExpr` (int to bool), and `if ((n = 13))` adds a `ParenExpr`. `ignoringParenImpCasts` skips those,
-so both forms are found. All five statement kinds that have a condition are covered.
-
-**Pass 2.** Only a body that is a `CompoundStmt` with zero statements counts. A loop whose body is a single
-non-block statement (`for (...) x++;`) or a bare `;` (`NullStmt`) is deliberately not reported, because the
-assignment asks for empty compound statements.
-
-**Pass 3.** A set difference, computed after the whole file has been visited:
-
-```
-Declared = { VarDecl* of every local variable }
-Used     = { VarDecl* that some DeclRefExpr refers to }
-Unused   = Declared minus Used
-```
-
-Every variable has exactly one `VarDecl` node and every use is a `DeclRefExpr` whose `getDecl()` points back to it,
-so the `VarDecl*` is the variable's identity (two variables both named `i` are two different pointers). The
-report is printed after `Tool.run(...)` because a use may appear after the declaration.
-
-### Build
-
-The tool is built inside an LLVM 17.0.6 source tree. Either use the lab layout:
+The tool is built inside an LLVM 17.0.6 source tree, like the lab's `Simple_Pass`:
 
 ```bash
 cp -r 2-ast-matcher-passes ~/llvm-project/clang-tools-extra/Mypass
 # add   add_subdirectory(Mypass)   to clang-tools-extra/CMakeLists.txt
 cd ~/llvm-project/build && cmake . && make -j4 Simple_Pass
+bin/Simple_Pass ../clang-tools-extra/Mypass/tests/assign_in_condition.cpp --
 ```
 
-or build it from where it is, with a small wrapper `CMakeLists.txt` in the LLVM tree that points at this folder.
+Tested with LLVM/Clang 17.0.6.
 
-### Run
+### Pass 1: assignment inside a condition
 
-```bash
-~/llvm-project/build/bin/Simple_Pass 2-ast-matcher-passes/tests/assign_in_condition.cpp --
+**Goal.** Find `if (x = 5)`, where `==` was probably meant.
+
+**Approach.** We check the condition of an `if`, `for`, `while`, `do-while` and `?:`. In each, we look for an
+assignment operator `=`. The matcher for `if` is shown below; the other four are the same with a different
+statement name, and `anyOf` joins all five.
+
+```cpp
+ifStmt(hasCondition(ignoringParenImpCasts(
+    binaryOperator(hasOperatorName("=")).bind("assignment"))))
 ```
 
-(`--` means "no compilation database".)
+`ignoringParenImpCasts` skips extra nodes around the condition. In C++, `n = 13` is wrapped in a cast to bool,
+and `if ((n = 13))` has extra brackets. Without it, these would be missed. We match only plain `=`, not `+=`.
+The callback prints where the assignment is.
 
-### Expected results on the provided tests
+**Test.** `tests/assign_in_condition.cpp`
 
-| Test | What it contains | Expected report |
-|---|---|---|
-| `assign_in_condition.cpp` | `if (n = 13)` on line 5, and `if (n == 10)` on line 8 | line 5 only |
-| `empty_loop_body.cpp` | empty `for` body (lines 6-8); `do` and `while` have real bodies | the `for` on line 6 only |
-| `unused_local.cpp` | `x` in `f` and `x` in `main` are never used; `n`, `i` are | `Unused variable: x` twice |
+**Output.** Only the assignment on line 5 is reported. The comparison `n == 10` on line 8 is not.
 
-## Status
+```
+tests/assign_in_condition.cpp:5:8
+```
 
-Verified on 15 Oct 2026 against LLVM 17.0.6 (`MA4_Pass` target, built from the committed `pass.cpp`):
+### Pass 2: empty loop body
 
-- [x] Part 1 write-up
-- [x] `pass.cpp` compiles, links and runs on all three tests
-- [x] Pass 1 reports line 5 of `assign_in_condition.cpp` (`if (n = 13)`) and not line 8 (`n == 10`)
-- [x] Pass 2 reports the empty `for` on line 6 of `empty_loop_body.cpp` and nothing else
-- [x] Pass 3 reports `Unused variable: x` twice on `unused_local.cpp`; `n` and `i` are not reported
-- [ ] Sample outputs added to the PDF
+**Goal.** Find `for`, `while` and `do-while` loops with an empty body `{}`.
 
-### Extra checks (own test inputs, not committed)
+**Approach.** For each of the three loops, we use `hasBody(compoundStmt(statementCountIs(0)))`. This means the
+body is a block with no statements inside. Loops with a single statement as the body, or just a `;` (like
+`for (...);`), are not reported, because the question asks only for empty blocks.
 
-- Pass 1 found `if (x = 5)`, `if ((x = g()))`, `while (x = y)`, `for (;x = y;)`, `do {} while (x = 0)` and
-  `(x = 3) ? 1 : 2`, and did not report `if (x == 5)`, `x = 7;` or `if (x)`.
-- Pass 2 found empty `for`, `while` and `do-while` bodies and skipped `for (...);`, `while (...);` and non-empty bodies.
-- Pass 3 found a plain unused local, an unused local in an inner block, and one inside a loop body. It did not
-  report used variables, a global, a `static` local or function parameters.
+**Test.** `tests/empty_loop_body.cpp`
 
-### Behaviour to state in the PDF
+**Output.** Only the empty `for` on line 6 is reported. The `do` and `while` loops in the test have statements
+in them.
 
-1. Pass 1 matches plain `=` only. `if (x += 2)` is not reported (`hasOperatorName("=")`).
-2. Pass 2 reports only an empty `{}`. `for (...);` (a `NullStmt` body) is not reported.
-3. Pass 3 treats any reference as a use, so `int c = 3; c = 4;` (written, never read) is not reported.
-4. Output for passes 1 and 2 is the source location (`file:line:col`) of the offending statement.
+```
+tests/empty_loop_body.cpp:6:5
+```
 
-## Notes
+### Pass 3: unused local variable
 
-The README and PDF text were drafted with AI assistance. The passes are written by the authors.
+**Goal.** Find local variables that are declared but never used.
+
+**Approach.** We use two matchers. One records every local variable when it is declared. The other records every
+place a local variable is used. Each variable has one declaration node, and every use points back to it, so we
+can tell variables apart even if they have the same name. We keep two sets: declared variables and used
+variables. After the whole file is processed, any variable in the declared set but not in the used set is
+unused, and we print it. We must wait until the end because a variable may be used later in the file than where
+it is declared. Function parameters, global variables and `static` locals are not reported. A variable that is
+only assigned to, never read (`int c = 3; c = 4;`), counts as used.
+
+**Test.** `tests/unused_local.cpp`
+
+**Output.** The unused `x` in `f` and the unused `x` in `main` are both reported. `n` and `i` are used, so they
+are not.
+
+```
+Unused variable: x
+Unused variable: x
+```
+
+## Limitations
+
+- Pass 1 finds only `=`. It misses `if (x += 2)`. It also misses an assignment inside a bigger condition, like
+  `if ((x = 1) && y)`, because we only check the whole condition.
+- Pass 2 does not report `for (...);` or `while (...);`, or a body that only holds an empty inner block.
+- Pass 3 misses variables that are only assigned and never read. It does not report parameters, globals or
+  `static` locals. It prints only the name, not the line.
+- Code in headers is ignored, so problems in included files are not reported. We did not test macros or templates.
+
+## Note on AI use
+
+The text of this write-up was drafted with AI assistance (Claude). The passes themselves were written by the
+authors.

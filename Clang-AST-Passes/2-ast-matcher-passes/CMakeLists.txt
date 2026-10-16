@@ -2,11 +2,11 @@ set(LLVM_LINK_COMPONENTS
   Support
   )
 
-add_clang_executable(Simple_Pass
+add_clang_executable(MA4_Pass
   pass.cpp
   )
 
-clang_target_link_libraries(Simple_Pass
+clang_target_link_libraries(MA4_Pass
   PRIVATE
   clangAST
   clangASTMatchers

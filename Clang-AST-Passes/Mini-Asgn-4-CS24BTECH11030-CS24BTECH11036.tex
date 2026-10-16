@@ -172,61 +172,86 @@ Dispatch-only visitors: \texttt{Visit(node)} calls the \texttt{VisitXxx} for tha
 Every \texttt{Stmt} exposes \texttt{children()}, and a \texttt{DeclContext} exposes \texttt{decls()}, for a hand-written walk. Clang nodes have no parent pointer; \texttt{ASTContext::getParents(node)} (backed by the \texttt{ParentMapContext}) computes the parent map on demand for upward navigation.
 
 \section{Part 2: AST-matcher passes}
-
-All three matchers are in one file, \texttt{pass.cpp}. Each check has its own test file in \texttt{tests/}. Every matcher only looks at the main file, so code from headers like \texttt{<stdio.h>} is ignored.
+All three matchers are in one file \texttt{pass.cpp}. Each check has its own test file in \texttt{tests/}. Every matcher only looks at the main file, so code from headers like \texttt{<stdio.h>} is ignored.
 
 \subsection{Build and run}
-The tool is built inside an LLVM 17.0.6 source tree. The target is called \texttt{MA4\_Pass}, so it does not clash with the lab's \texttt{Simple\_Pass}.
-\begin{Verbatim}[fontsize=\footnotesize]
+The tool is built inside an LLVM 17.0.6 source tree. The target is called \texttt{MA4\_Pass}, so it does not clash with the lab's \texttt{Simple\_Pass}:
+
+\begin{Verbatim}[fontsize=\footnotesize,frame=single,breaklines=true]
+# run from the folder that contains 2-ast-matcher-passes/
+cd path/to/CS24BTECH11030_CS24BTECH11036
 cp -r 2-ast-matcher-passes ~/llvm-project/clang-tools-extra/ma4-passes
-# add:  add_subdirectory(ma4-passes)  to clang-tools-extra/CMakeLists.txt
+# add   add_subdirectory(ma4-passes)   to ~/llvm-project/clang-tools-extra/CMakeLists.txt
 cd ~/llvm-project/build && cmake . && make -j4 MA4_Pass
 bin/MA4_Pass ../clang-tools-extra/ma4-passes/tests/assign_in_condition.cpp --
 \end{Verbatim}
-\texttt{--} means ``no compilation database''. Tested with LLVM/Clang 17.0.6.
+
+\texttt{--} means ``no compilation database''.
+
+Tested with LLVM/Clang 17.0.6.
 
 \subsection{Pass 1: assignment inside a condition}
-\textbf{Goal.} Find \texttt{if (x = 5)}, where \texttt{==} was probably meant.\\
-\textbf{Approach.} We check the condition of an \texttt{if}, \texttt{for}, \texttt{while}, \texttt{do-while} and \texttt{?:}. In each, we look for an assignment operator \texttt{=}. The matcher for \texttt{if} is shown below; the other four are the same with a different statement name, and \texttt{anyOf} joins all five.
-\begin{Verbatim}[fontsize=\footnotesize,frame=single]
-ifStmt(hasCondition(ignoringParenImpCasts(
-    binaryOperator(hasOperatorName("=")).bind("assignment"))))
+\textbf{Goal.} Find \texttt{if (x = 5)}, where \texttt{==} was probably meant.
+
+\textbf{Approach.} We check the conditional statements inside \texttt{if}, \texttt{for}, \texttt{while}, \texttt{do-while} and \texttt{?:} constructs and in each, we look for an assignment operator \texttt{=}. The matcher for the \texttt{if} is shown below; the other four are the same with a different statement name, and \texttt{anyOf} joins all five.
+
+\begin{Verbatim}[fontsize=\scriptsize,frame=single,breaklines=true]
+ifStmt(hasCondition(ignoringParenImpCasts(binaryOperator(hasOperatorName("=")).bind("assignment"))))
 \end{Verbatim}
-\texttt{ignoringParenImpCasts} skips extra nodes around the condition. In C++, \texttt{n = 13} is wrapped in a cast to bool, and \texttt{if ((n = 13))} has extra brackets. Without it, these would be missed. We match only plain \texttt{=}, not \texttt{+=}. The callback prints where the assignment is.\\
-\textbf{Test.} \texttt{tests/assign\_in\_condition.cpp}\\
-\textbf{Output.} Only the assignment on line 5 is reported. The comparison \texttt{n == 10} on line 8 is not.
-\begin{Verbatim}[fontsize=\footnotesize,frame=single]
+
+In C++, \texttt{n = 13} is implicitly converted to bool, and \texttt{if ((n = 13))} has extra brackets. \texttt{ignoringParenImpCasts} skips extra nodes around the condition and without it, the above cases would be missed. We match only plain assignment statements \texttt{=}, not compound assignment operators like \texttt{+=}. The callback prints where the assignment is.
+
+\textbf{Test.} \texttt{tests/assign\_in\_condition.cpp}
+
+\textbf{Output.} The assignments on lines 5, 11, 17, 25, 29 are reported while the comparisons like \texttt{n == 10} on line 8 are not.
+
+\begin{Verbatim}[fontsize=\footnotesize,frame=single,breaklines=true]
 tests/assign_in_condition.cpp:5:8
+tests/assign_in_condition.cpp:11:21
+tests/assign_in_condition.cpp:17:11
+tests/assign_in_condition.cpp:25:13
+tests/assign_in_condition.cpp:29:10
 \end{Verbatim}
 
 \subsection{Pass 2: empty loop body}
-\textbf{Goal.} Find \texttt{for}, \texttt{while} and \texttt{do-while} loops with an empty body \texttt{\{\}}.\\
-\textbf{Approach.} For each of the three loops, we use \texttt{hasBody(compoundStmt(statementCountIs(0)))}. This means the body is a block with no statements inside. Loops with a single statement as the body, or just a \texttt{;} (like \texttt{for (...);}), are not reported, because the question asks only for empty blocks.\\
-\textbf{Test.} \texttt{tests/empty\_loop\_body.cpp}\\
-\textbf{Output.} Only the empty \texttt{for} on line 6 is reported. The \texttt{do} and \texttt{while} loops in the test have statements in them.
-\begin{Verbatim}[fontsize=\footnotesize,frame=single]
-tests/empty_loop_body.cpp:6:5
+\textbf{Goal.} Find \texttt{for}, \texttt{while} and \texttt{do-while} loops with an empty body \texttt{\{\}}.
+
+\textbf{Approach.} For each of the three loops, we use \texttt{hasBody(compoundStmt(statementCountIs(0)))}. This matches statements having a body with 0 statements inside it. However, loops with a single statement as the body, or just a \texttt{;} (like \texttt{for (...);}), are not reported, as the question asks only for empty blocks.
+
+\textbf{Test.} \texttt{tests/empty\_loop\_body.cpp}
+
+\textbf{Output.} The empty \texttt{for} on line 13, the empty \texttt{do\{\}while()} on line 21 and the empty \texttt{while()\{\}} on line 25 are reported.
+
+\begin{Verbatim}[fontsize=\footnotesize,frame=single,breaklines=true]
+tests/empty_loop_body.cpp:13:5
+tests/empty_loop_body.cpp:21:5
+tests/empty_loop_body.cpp:25:5
 \end{Verbatim}
 
 \subsection{Pass 3: unused local variable}
-\textbf{Goal.} Find local variables that are declared but never used.\\
-\textbf{Approach.} We use two matchers. One records every local variable when it is declared. The other records every place a local variable is used. Each variable has one declaration node, and every use points back to it, so we can tell variables apart even if they have the same name. We keep two sets: declared variables and used variables. After the whole file is processed, any variable in the declared set but not in the used set is unused, and we print it. We must wait until the end because a variable may be used later in the file than where it is declared. Function parameters, global variables and \texttt{static} locals are not reported. A variable that is only assigned to, never read (\texttt{int c = 3; c = 4;}), counts as used.\\
-\textbf{Test.} \texttt{tests/unused\_local.cpp}\\
-\textbf{Output.} The unused \texttt{x} in \texttt{f} and the unused \texttt{x} in \texttt{main} are both reported. \texttt{n} and \texttt{i} are used, so they are not.
-\begin{Verbatim}[fontsize=\footnotesize,frame=single]
-Unused variable: x
+\textbf{Goal.} Find local variables that are declared but never used.
+
+\textbf{Approach.} We use two matchers decls and refs. decls records every local variable when it is declared. refs records every place a local variable is used. Each variable has one declaration node, and every use (referenced) points back to it, so we can tell variables apart even if they have the same name. We keep two sets: declared variables and referenced variables. After we process the whole file, any variable in the declared set but not in the referenced set is unused (unreferenced) and we print it. We must wait until the end because a variable may be used later in the file after it is declared. Function parameters, global variables and \texttt{static} locals are not reported. A variable that is only assigned to after declaration (\texttt{int c = 3; c = 4;}) also counts as used.
+
+\textbf{Test.} \texttt{tests/unused\_local.cpp}
+
+\textbf{Output.} The unused \texttt{y} in \texttt{f}, unused \texttt{z} in \texttt{f} and the unused \texttt{x} in \texttt{main} are all reported. \texttt{n}, \texttt{i} and \texttt{x} in \texttt{f} are used, so they are not reported.
+
+\begin{Verbatim}[fontsize=\footnotesize,frame=single,breaklines=true]
+Unused variable: y
+Unused variable: z
 Unused variable: x
 \end{Verbatim}
 
 \section{Limitations}
 \begin{itemize}
-\item Pass 1 finds only \texttt{=}. It misses \texttt{if (x += 2)}. It also misses an assignment inside a bigger condition, like \texttt{if ((x = 1) \&\& y)}, because we only check the whole condition.
-\item Pass 2 does not report \texttt{for (...);} or \texttt{while (...);}, or a body that only holds an empty inner block.
-\item Pass 3 misses variables that are only assigned and never read. It does not report parameters, globals or \texttt{static} locals. It prints only the name, not the line.
-\item Code in headers is ignored, so problems in included files are not reported. We did not test macros or templates.
+\item Pass 1 finds only statements with \texttt{=}. It misses \texttt{if (x += 2)}. It also misses assignments inside bigger conditions, like \texttt{if ((x = 1) \&\& y)}, because we only check the whole condition and not break it into subparts.
+\item Pass 2 does not report \texttt{for (...);} or \texttt{while (...);}, or a body that only holds an empty inner block like \texttt{for(...)\{if(...)\{\}\}}.
+\item Pass 3 misses variables that are only assigned and never read. It does not report parameters, globals or \texttt{static} local variables. It prints only the name, not the line number of the variable which can be confusing if the variable name is used across multiple scopes.
+\item Code in headers is ignored, so problems in included files are not reported.
 \end{itemize}
 
 \section*{Note on AI use}
-The text of this write-up was drafted with AI assistance (Claude). The passes themselves were written by the authors.
+AI assistance was used to organize and polish the report. The passes themselves were written by us.
 
 \end{document}

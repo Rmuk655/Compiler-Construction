@@ -128,16 +128,17 @@ Every \texttt{Stmt} exposes \texttt{children()}, and a \texttt{DeclContext} expo
 
 \section{Part 2: AST-matcher passes}
 
-All three checks are in one tool, \texttt{pass.cpp}. Run it as \texttt{Simple\_Pass file.cpp --}. Each check has its own test file in \texttt{tests/}. Every matcher only looks at the main file, so code from headers like \texttt{<stdio.h>} is ignored.
+All three matchers are in one file, \texttt{pass.cpp}. Each check has its own test file in \texttt{tests/}. Every matcher only looks at the main file, so code from headers like \texttt{<stdio.h>} is ignored.
 
 \subsection{Build and run}
+The tool is built inside an LLVM 17.0.6 source tree. The target is called \texttt{MA4\_Pass}, so it does not clash with the lab's \texttt{Simple\_Pass}.
 \begin{Verbatim}[fontsize=\footnotesize]
-cp -r 2-ast-matcher-passes ~/llvm-project/clang-tools-extra/Mypass
-# add:  add_subdirectory(Mypass)  to clang-tools-extra/CMakeLists.txt
-cd ~/llvm-project/build && cmake . && make -j4 Simple_Pass
-bin/Simple_Pass ../clang-tools-extra/Mypass/tests/assign_in_condition.cpp --
+cp -r 2-ast-matcher-passes ~/llvm-project/clang-tools-extra/ma4-passes
+# add:  add_subdirectory(ma4-passes)  to clang-tools-extra/CMakeLists.txt
+cd ~/llvm-project/build && cmake . && make -j4 MA4_Pass
+bin/MA4_Pass ../clang-tools-extra/ma4-passes/tests/assign_in_condition.cpp --
 \end{Verbatim}
-Tested with LLVM/Clang 17.0.6.
+\texttt{--} means ``no compilation database''. Tested with LLVM/Clang 17.0.6.
 
 \subsection{Pass 1: assignment inside a condition}
 \textbf{Goal.} Find \texttt{if (x = 5)}, where \texttt{==} was probably meant.\\

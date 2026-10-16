@@ -12,8 +12,8 @@ The PDF write-up is `Mini-Asgn-4-CS24BTECH11030-CS24BTECH11036.pdf`.
 
 | Path | Contents |
 |---|---|
-| `1-ast-dump/nested_loops.cpp` | Program with nested loops and function calls, used for the AST dump |
-| `1-ast-dump/ast_dump_main.txt` | Raw `clang -ast-dump` output for `main` |
+| `1-ast-dump/nested_loops.cpp` | Program with a function `f`, nested `for` loops, a `while` loop and an `if`/`else`, used for the AST dump |
+| `1-ast-dump/ast_dump.txt` | Full raw `clang -ast-dump` output for `nested_loops.cpp` (replaces the old `ast_dump_main.txt`) |
 | `2-ast-matcher-passes/pass.cpp` | The three AST-matcher passes in one LibTooling tool |
 | `2-ast-matcher-passes/CMakeLists.txt` | Build file (not part of the `.cpp`-only submission) |
 | `2-ast-matcher-passes/tests/` | Inputs: `assign_in_condition.cpp`, `empty_loop_body.cpp`, `unused_local.cpp` |
@@ -21,10 +21,14 @@ The PDF write-up is `Mini-Asgn-4-CS24BTECH11030-CS24BTECH11036.pdf`.
 ## Part 1: AST dump
 
 ```bash
-clang -fsyntax-only -Xclang -ast-dump -Xclang -ast-dump-filter=main 1-ast-dump/nested_loops.cpp
+cd 1-ast-dump
+clang -Xclang -ast-dump -fno-color-diagnostics -fsyntax-only nested_loops.cpp > ast_dump.txt
 ```
 
-`-ast-dump-filter=main` limits the dump to `main`, skipping the thousands of nodes pulled in by `<stdio.h>`.
+`nested_loops.cpp` has no `#include`, so the dump contains only Clang's few implicit typedefs plus `f` and
+`main` (about 100 lines) and no filter is needed. It covers a function with a reference parameter (`f`),
+nested `for` loops, a compound assignment (`sum += f(i, j)`), a `while` loop and an `if`/`else`.
+`ast_dump.txt` is the committed output of the command above (addresses differ between runs).
 The analysis of the nodes and of Clang's traversal mechanisms is in the PDF.
 
 ## Part 2: AST-matcher passes

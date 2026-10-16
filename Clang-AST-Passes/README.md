@@ -150,20 +150,21 @@ the `ParentMapContext`) computes the parent map on demand for upward navigation.
 
 ## Part 2: AST-matcher passes
 
-All three checks are in one tool, `pass.cpp`. Run it as `Simple_Pass file.cpp --` (`--` means "no compilation
-database"). Each check has its own test file in `tests/`. Every matcher only looks at the main file, so code from
-headers like `<stdio.h>` is ignored.
+All three matchers are in one file `pass.cpp`. Each check has its own test file in `tests/`. Every matcher only looks at the main file, so code from headers like `<stdio.h>` is ignored.
 
 ### Build and run
 
-The tool is built inside an LLVM 17.0.6 source tree, like the lab's `Simple_Pass`:
+The tool is built inside an LLVM 17.0.6 source tree. The target is called `MA4_Pass`, so it does not clash with
+the lab's `Simple_Pass`:
 
 ```bash
-cp -r 2-ast-matcher-passes ~/llvm-project/clang-tools-extra/Mypass
-# add   add_subdirectory(Mypass)   to clang-tools-extra/CMakeLists.txt
-cd ~/llvm-project/build && cmake . && make -j4 Simple_Pass
-bin/Simple_Pass ../clang-tools-extra/Mypass/tests/assign_in_condition.cpp --
+cp -r 2-ast-matcher-passes ~/llvm-project/clang-tools-extra/ma4-passes
+# add   add_subdirectory(ma4-passes)   to clang-tools-extra/CMakeLists.txt
+cd ~/llvm-project/build && cmake . && make -j4 MA4_Pass
+bin/MA4_Pass ../clang-tools-extra/ma4-passes/tests/assign_in_condition.cpp --
 ```
+
+`--` means "no compilation database".
 
 Tested with LLVM/Clang 17.0.6.
 
@@ -171,13 +172,11 @@ Tested with LLVM/Clang 17.0.6.
 
 **Goal.** Find `if (x = 5)`, where `==` was probably meant.
 
-**Approach.** We check the condition of an `if`, `for`, `while`, `do-while` and `?:`. In each, we look for an
-assignment operator `=`. The matcher for `if` is shown below; the other four are the same with a different
-statement name, and `anyOf` joins all five.
+**Approach.** We check the conditional statements inside `if`, `for`, `while`, `do-while` and `?:` constructs and in each, we look for an
+assignment operator `=`. The matcher for the `if` is shown below; the other four are the same with a different statement name, and `anyOf` joins all five.
 
 ```cpp
-ifStmt(hasCondition(ignoringParenImpCasts(
-    binaryOperator(hasOperatorName("=")).bind("assignment"))))
+ifStmt(hasCondition(ignoringParenImpCasts(binaryOperator(hasOperatorName("=")).bind("assignment"))))
 ```
 
 `ignoringParenImpCasts` skips extra nodes around the condition. In C++, `n = 13` is wrapped in a cast to bool,

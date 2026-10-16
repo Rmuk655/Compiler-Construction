@@ -1,6 +1,6 @@
 \documentclass[11pt,a4paper]{article}
 \usepackage[margin=2.2cm]{geometry}
-\usepackage{fancyvrb}
+\usepackage{fvextra}
 \usepackage{booktabs}
 \usepackage{hyperref}
 \usepackage{enumitem}
@@ -25,89 +25,134 @@ CS24BTECH11036: Part 2 (the three AST-matcher passes, their tests and write-up).
 \section{Part 1: Exploring AST dumps}
 
 \subsection{Program}
-The input is \texttt{nested\_loops.cpp}: a function \texttt{f} containing a loop, and a \texttt{main} with a doubly nested loop (both loops use a variable called \texttt{i}) and a call to \texttt{f}.
 
 \begin{Verbatim}[fontsize=\footnotesize,frame=single]
-#include <stdio.h>
-
-void f(int n){
-    for(int i = 0; i < n; i++){
-        printf("Hello World\n");
-    }
+int f(int x, int& y) {
+  return x * x + y * y;
 }
 
-int main(){
-    int n = 10;
-    for(int i = 0; i < n; i++){
-        for(int i = 0; i < n; i++){
-            printf("Hello World\n");
-        }
+int main() {
+  int k = 10, sum = 0;
+  
+  for (int i = 0; i < k; i++) {
+    for (int j = 0; j < k; j++) {
+      sum += f(i, j);
     }
-    f(n);
-    return 0;
+  }
+
+  int cnt = 0;
+  while (sum != 1) {
+    if (sum % 2) {
+      sum = 3 * sum + 1;
+    } else {
+      sum /= 2;
+    }
+
+    cnt++;
+  }
+
+  return cnt;
 }
 \end{Verbatim}
 
 \subsection{Dumping the AST}
 \begin{Verbatim}[fontsize=\footnotesize]
-clang -fsyntax-only -Xclang -ast-dump -Xclang -ast-dump-filter=main nested_loops.cpp
+clang -Xclang -ast-dump -fno-color-diagnostics -fsyntax-only nested_loops.cpp > ast_dump.txt
 \end{Verbatim}
-\texttt{-ast-dump-filter=main} restricts the dump to the declaration named \texttt{main}; without it the headers pulled in by \texttt{<stdio.h>} dominate the output. The dump below has addresses and most source ranges removed for readability (the raw output is \texttt{ast\_dump\_main.txt}).
+Running the above command dumps the AST into a local txt file. Below is a reduced version of the AST dump of \texttt{nested\_loops.cpp}
 
-\begin{Verbatim}[fontsize=\scriptsize,frame=single]
-FunctionDecl main 'int ()'
-`-CompoundStmt
-  |-DeclStmt
-  | `-VarDecl used n 'int' cinit
-  |   `-IntegerLiteral 'int' 10
-  |-ForStmt                                   <-- outer loop
-  | |-DeclStmt
-  | | `-VarDecl used i 'int' cinit
-  | |   `-IntegerLiteral 'int' 0
-  | |-<<<NULL>>>                              <-- no condition variable
-  | |-BinaryOperator 'bool' '<'
-  | | |-ImplicitCastExpr 'int' <LValueToRValue>
-  | | | `-DeclRefExpr 'int' lvalue Var 'i'
-  | | `-ImplicitCastExpr 'int' <LValueToRValue>
-  | |   `-DeclRefExpr 'int' lvalue Var 'n'
-  | |-UnaryOperator 'int' postfix '++'
-  | | `-DeclRefExpr 'int' lvalue Var 'i'
-  | `-CompoundStmt
-  |   `-ForStmt                               <-- inner loop
-  |     |-DeclStmt ... (VarDecl i)
-  |     |-<<<NULL>>>
-  |     |-BinaryOperator 'bool' '<'
-  |     |-UnaryOperator 'int' postfix '++'
-  |     `-CompoundStmt
-  |       `-CallExpr 'int'                     <-- printf(...)
-  |         |-ImplicitCastExpr <FunctionToPointerDecay>
-  |         | `-DeclRefExpr Function 'printf'
-  |         `-ImplicitCastExpr <ArrayToPointerDecay>
-  |           `-StringLiteral "Hello World\n"
-  |-CallExpr 'void'                            <-- f(n)
-  | |-ImplicitCastExpr <FunctionToPointerDecay>
-  | | `-DeclRefExpr Function 'f'
-  | `-ImplicitCastExpr <LValueToRValue>
-  |   `-DeclRefExpr Var 'n'
-  `-ReturnStmt
-    `-IntegerLiteral 'int' 0
+\begin{Verbatim}[fontsize=\scriptsize, frame=single, breaklines, breakanywhere, breakindent=4em, breaksymbolleft={}]
+TranslationUnitDecl 0x6239bf35e318 <<invalid sloc>> <invalid sloc>
+|-TypedefDecl 0x6239bf35eb88 <<invalid sloc>> <invalid sloc> implicit __int128_t '__int128'
+| `-BuiltinType 0x6239bf35e8e0 '__int128'
+| ...
+|-FunctionDecl 0x6239bf3a7eb8 <nested_loops.cpp:1:1, line:3:1> line:1:5 used f 'int (int, int &)'
+| ...
+`-FunctionDecl 0x6239bf3a8178 <line:5:1, line:26:1> line:5:5 main 'int ()'
+  `-CompoundStmt 0x6239bf3c1ee8 <col:12, line:26:1>
+    | ...
+    |-ForStmt 0x6239bf3a88b8 <line:8:3, line:12:3>
+    | |-DeclStmt 0x6239bf3a8460 <line:8:8, col:17>
+    | | `-VarDecl 0x6239bf3a83d8 <col:8, col:16> col:12 used i 'int' cinit
+    | |   `-IntegerLiteral 0x6239bf3a8440 <col:16> 'int' 0
+    | |-<<<NULL>>>
+    | |-BinaryOperator 0x6239bf3a84e8 <col:19, col:23> 'bool' '<'
+    | | |-ImplicitCastExpr 0x6239bf3a84b8 <col:19> 'int' <LValueToRValue>
+    | | | `-DeclRefExpr 0x6239bf3a8478 <col:19> 'int' lvalue Var 0x6239bf3a83d8 'i' 'int'
+    | | `-ImplicitCastExpr 0x6239bf3a84d0 <col:23> 'int' <LValueToRValue>
+    | |   `-DeclRefExpr 0x6239bf3a8498 <col:23> 'int' lvalue Var 0x6239bf3a8268 'k' 'int'
+    | |-UnaryOperator 0x6239bf3a8528 <col:26, col:27> 'int' postfix '++'
+    | | `-DeclRefExpr 0x6239bf3a8508 <col:26> 'int' lvalue Var 0x6239bf3a83d8 'i' 'int'
+    | `-CompoundStmt 0x6239bf3a88a0 <col:31, line:12:3>
+    |   `-ForStmt 0x6239bf3a8868 <line:9:5, line:11:5>
+    |     |-DeclStmt 0x6239bf3a85e0 <line:9:10, col:19>
+    |     | `-VarDecl 0x6239bf3a8558 <col:10, col:18> col:14 used j 'int' cinit
+    |     |   `-IntegerLiteral 0x6239bf3a85c0 <col:18> 'int' 0
+    |     |-<<<NULL>>>
+    |     |-BinaryOperator 0x6239bf3a8668 <col:21, col:25> 'bool' '<'
+    |     | |-ImplicitCastExpr 0x6239bf3a8638 <col:21> 'int' <LValueToRValue>
+    |     | | `-DeclRefExpr 0x6239bf3a85f8 <col:21> 'int' lvalue Var 0x6239bf3a8558 'j' 'int'
+    |     | `-ImplicitCastExpr 0x6239bf3a8650 <col:25> 'int' <LValueToRValue>
+    |     |   `-DeclRefExpr 0x6239bf3a8618 <col:25> 'int' lvalue Var 0x6239bf3a8268 'k' 'int'
+    |     |-UnaryOperator 0x6239bf3a86a8 <col:28, col:29> 'int' postfix '++'
+    |     | `-DeclRefExpr 0x6239bf3a8688 <col:28> 'int' lvalue Var 0x6239bf3a8558 'j' 'int'
+    |     `-CompoundStmt 0x6239bf3a8850 <col:33, line:11:5>
+    |       `-CompoundAssignOperator 0x6239bf3a8820 <line:10:7, col:20> 'int' lvalue '+=' ComputeLHSTy='int' ComputeResultTy='int'
+    |         |-DeclRefExpr 0x6239bf3a86c0 <col:7> 'int' lvalue Var 0x6239bf3a8308 'sum' 'int'
+    |         `-CallExpr 0x6239bf3a87d8 <col:14, col:20> 'int'
+    |           |-ImplicitCastExpr 0x6239bf3a87c0 <col:14> 'int (*)(int, int &)' <FunctionToPointerDecay>
+    |           | `-DeclRefExpr 0x6239bf3a8768 <col:14> 'int (int, int &)' lvalue Function 0x6239bf3a7eb8 'f' 'int (int, int &)'
+    |           |-ImplicitCastExpr 0x6239bf3a8808 <col:16> 'int' <LValueToRValue>
+    |           | `-DeclRefExpr 0x6239bf3a8728 <col:16> 'int' lvalue Var 0x6239bf3a83d8 'i' 'int'
+    |           `-DeclRefExpr 0x6239bf3a8748 <col:19> 'int' lvalue Var 0x6239bf3a8558 'j' 'int'
+    | ...
+    |-WhileStmt 0x6239bf3c1e80 <line:15:3, line:23:3>
+    | |-BinaryOperator 0x6239bf3a8a00 <line:15:10, col:17> 'bool' '!='
+    | | |-ImplicitCastExpr 0x6239bf3a89e8 <col:10> 'int' <LValueToRValue>
+    | | | `-DeclRefExpr 0x6239bf3a89a8 <col:10> 'int' lvalue Var 0x6239bf3a8308 'sum' 'int'
+    | | `-IntegerLiteral 0x6239bf3a89c8 <col:17> 'int' 1
+    | `-CompoundStmt 0x6239bf3c1e60 <col:20, line:23:3>
+    |   |-IfStmt 0x6239bf3c1df8 <line:16:5, line:20:5> has_else
+    |   | |-ImplicitCastExpr 0x6239bf3a8a98 <line:16:9, col:15> 'bool' <IntegralToBoolean>
+    |   | | `-BinaryOperator 0x6239bf3a8a78 <col:9, col:15> 'int' '%'
+    |   | |   |-ImplicitCastExpr 0x6239bf3a8a60 <col:9> 'int' <LValueToRValue>
+    |   | |   | `-DeclRefExpr 0x6239bf3a8a20 <col:9> 'int' lvalue Var 0x6239bf3a8308 'sum' 'int'
+    |   | |   `-IntegerLiteral 0x6239bf3a8a40 <col:15> 'int' 2
+    |   | |-CompoundStmt 0x6239bf3a8ba8 <col:18, line:18:5>
+    |   | | `-BinaryOperator 0x6239bf3a8b88 <line:17:7, col:23> 'int' lvalue '='
+    |   | |   ...
+    |   | `-CompoundStmt 0x6239bf3c1de0 <line:18:12, line:20:5>
+    |   |   `-CompoundAssignOperator 0x6239bf3c1db0 <line:19:7, col:14> 'int' lvalue '/=' ComputeLHSTy='int' ComputeResultTy='int'
+    |   |     ...
+    |   `-UnaryOperator 0x6239bf3c1e48 <line:22:5, col:8> 'int' postfix '++'
+    |     `-DeclRefExpr 0x6239bf3c1e28 <col:5> 'int' lvalue Var 0x6239bf3a8908 'cnt' 'int'
+    `-ReturnStmt 0x6239bf3c1ed8 <line:25:3, col:10>
+      `-ImplicitCastExpr 0x6239bf3c1ec0 <col:10> 'int' <LValueToRValue>
+        `-DeclRefExpr 0x6239bf3c1ea0 <col:10> 'int' lvalue Var 0x6239bf3a8908 'cnt' 'int'
 \end{Verbatim}
 
 \subsection{Interesting nodes and their hierarchy}
 
-\paragraph{1. \texttt{ForStmt}.}
-A \texttt{for} loop is one node with four fixed child slots, in order: \emph{init} (\texttt{DeclStmt}), \emph{condition variable} (here \texttt{<<<NULL>>>}, used only for \texttt{for (...; T v = ...; )} forms), \emph{condition} (\texttt{BinaryOperator <}), \emph{increment} (\texttt{UnaryOperator ++}), and finally the \emph{body}. In the dump the body is a \texttt{CompoundStmt}, whose only child is the inner \texttt{ForStmt}. This is how loop nesting appears in the tree: the inner loop is a child of the outer loop's body, not a sibling.
+\textbf{1. \texttt{ForStmt}.}
 
-\paragraph{2. \texttt{CallExpr}.}
-\texttt{printf("Hello World\textbackslash n")} is a \texttt{CallExpr} whose first child is the callee expression and the remaining children are the arguments. The callee is not a bare \texttt{DeclRefExpr}: Clang wraps it in an \texttt{ImplicitCastExpr <FunctionToPointerDecay>}, so the node under \texttt{CallExpr} is the cast, and the \texttt{DeclRefExpr} naming \texttt{printf} is its child. The string argument is likewise wrapped in an \texttt{ArrayToPointerDecay} cast above the \texttt{StringLiteral}. A matcher for ``calls to \texttt{printf}'' therefore has to look through these implicit nodes, which \texttt{callee(functionDecl(hasName("printf")))} does for us.
+A \texttt{for} loop is one node with four fixed child slots, in order: \emph{init} (\texttt{DeclStmt}), \emph{condition variable} (here \texttt{<<<NULL>>>}, used only for \texttt{for (...; T v = ...; )} forms), \emph{condition} (\texttt{BinaryOperator <}), \emph{increment} (\texttt{UnaryOperator ++}), and finally the \emph{body}. In the dump the body is a \texttt{CompoundStmt}, whose only child is the inner \texttt{ForStmt}. This is how loop nesting appears in the tree: the inner loop is a child of the outer loop's body.
 
-\paragraph{3. \texttt{DeclStmt} / \texttt{VarDecl} / \texttt{DeclRefExpr}.}
-\texttt{int i = 0;} is a \texttt{DeclStmt} (a statement) holding a \texttt{VarDecl} (the declaration), whose child is the initializer \texttt{IntegerLiteral}. Every later use of \texttt{i} is a \texttt{DeclRefExpr}, which does not copy the variable but \emph{refers} to a particular \texttt{VarDecl} (the dump shows \texttt{Var 0x...~'i'} before the addresses were stripped). The program declares \texttt{i} twice, so there are two distinct \texttt{VarDecl} nodes; each \texttt{DeclRefExpr} points to the nearest enclosing one, so the inner loop's \texttt{i} shadows the outer one. This declaration/reference link is exactly what is needed to decide whether a local variable is ever used (Part 2, pass 3).
+\textbf{2. \texttt{CallExpr}.}
 
-\paragraph{Other nodes worth noting.}
-\texttt{ImplicitCastExpr <LValueToRValue>} appears around every variable that is \emph{read} (\texttt{i} and \texttt{n} in \texttt{i < n}) but not around \texttt{i} in \texttt{i++}, where it is modified in place.
+\texttt{f(i, j)} is denoted by \texttt{CallExpr} in the clang AST. Further, Its children are \emph{function pointer} (Here achieved via \texttt{ImplicitCastExpr <FunctionToPointerDecay>}), and \emph{parameters}.
+Another interesting thing which can be seen is the difference in how \emph{CallByValue} and \emph{CallByReference} affects the parameters passes. \emph{CallbyValue} requires an \texttt{ImplicitCastExpr <LValueToRValue>}, while for \emph{CallByReference}, we can directly pass in a reference \texttt{DeclRefExpr}.
+
+\textbf{3. \texttt{WhileStmt}.}
+
+A \texttt{while} loop has two child slots, in order: \emph{condition} (Here a \texttt{BinaryOperator}), and \emph{body} (\texttt{CompoundStmt})
+
+\textbf{Other nodes worth noting.}
+
+\texttt{ImplicitCastExpr <LValueToRValue>} appears around every variable that is \emph{read} (\texttt{i} and \texttt{k} in \texttt{i < k}) but not around \texttt{i} in \texttt{i++}, where it is modified in place.
+
 \texttt{CompoundStmt} is the \texttt{\{ ... \}} block and just holds a list of statements.
-The overall root of this dump is \texttt{FunctionDecl}, which sits under the \texttt{TranslationUnitDecl}.
+
+The overall root of this dump is the \texttt{TranslationUnitDecl}.
 
 \section{Traversal mechanisms in Clang}
 

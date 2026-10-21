@@ -29,36 +29,42 @@ void yyerror(const char *S);
    nodes travel up the parse stack as raw pointers and are wrapped back into
    std::unique_ptr as soon as they are attached to a parent node. */
 %union {
-  double num;
+  double num_double;
+  int num_int;
+  bool cond;
   std::string *str;
   ExprAST *expr;
   PrototypeAST *proto;
   FunctionAST *func;
   std::vector<ExprAST *> *exprs;
-  std::vector<std::string> *names;
+  std::vector<std::vector<std::string>> *typed_params;
 }
 
 %define parse.error detailed
 
 %token DEF EXTERN
 %token <str> IDENTIFIER
-%token <num> NUMBER
+%token <num_double> DOUBLE
+%token <num_int> INTEGER
+%token <cond> BOOLEAN
+%token TYPE_DOUBLE TYPE_INT TYPE_BOOL
 
+%type <str> type
 %type <expr> expr
 %type <proto> prototype external
 %type <func> definition
 %type <exprs> args arglist
-%type <names> params
+%type <typed_params> params
 
 /* Free values that get discarded during error recovery. */
-%destructor { delete $$; } <str> <expr> <proto> <func> <names>
+%destructor { delete $$; } <str> <expr> <proto> <func> <typed_params>
 %destructor { for (ExprAST *E : *$$) delete E; delete $$; } <exprs>
 
 /* Precedence, lowest first. Matches the old BinopPrecedence table:
    '<' = 10, '+' '-' = 20, '*' = 40, all left-associative. */
-%left '<'
+%left '<' '>'
 %left '+' '-'
-%left '*'
+%left '*' '/'
 
 /* "x (" is always a call, never variable x followed by a parenthesised
    top-level expression (same choice the hand-written parser made). */
@@ -99,15 +105,23 @@ prototype
                             delete $1; delete $3; }
   ;
 
+type
+  : TYPE_INT    { $$ = new std::string("int"); }
+  | TYPE_DOUBLE { $$ = new std::string("double"); }
+  | TYPE_BOOL   { $$ = new std::string("bool"); }
+  ;
+
 params
-  : %empty                { $$ = new std::vector<std::string>(); }
-  | params IDENTIFIER     { $1->push_back(*$2); delete $2; $$ = $1; }
+  : %empty                 { $$ = new std::vector<std::vector<std::string>>(); }
+  | params type IDENTIFIER { $1->push_back({*$2, *$3}); delete $2; delete $3; $$ = $1; }
   ;
 
 /// expression
 ///   ::= numberexpr | identifierexpr | parenexpr | expression binop expression
 expr
-  : NUMBER                { $$ = new NumberExprAST($1); }
+  : DOUBLE                { $$ = new NumberExprAST($1); }
+  | INTEGER               { $$ = new NumberExprAST($1); }
+  | BOOLEAN               { $$ = new NumberExprAST($1); }
   | IDENTIFIER %prec VARIABLE
                           { $$ = new VariableExprAST(*$1); delete $1; }
   | IDENTIFIER '(' args ')'
@@ -120,11 +134,15 @@ expr
   | '(' expr ')'          { $$ = $2; }
   | expr '<' expr         { $$ = new BinaryExprAST('<', std::unique_ptr<ExprAST>($1),
                                                         std::unique_ptr<ExprAST>($3)); }
+  | expr '>' expr         { $$ = new BinaryExprAST('>', std::unique_ptr<ExprAST>($1),
+                                                        std::unique_ptr<ExprAST>($3)); }
   | expr '+' expr         { $$ = new BinaryExprAST('+', std::unique_ptr<ExprAST>($1),
                                                         std::unique_ptr<ExprAST>($3)); }
   | expr '-' expr         { $$ = new BinaryExprAST('-', std::unique_ptr<ExprAST>($1),
                                                         std::unique_ptr<ExprAST>($3)); }
   | expr '*' expr         { $$ = new BinaryExprAST('*', std::unique_ptr<ExprAST>($1),
+                                                        std::unique_ptr<ExprAST>($3)); }
+  | expr '/' expr         { $$ = new BinaryExprAST('/', std::unique_ptr<ExprAST>($1),
                                                         std::unique_ptr<ExprAST>($3)); }
   ;
 

@@ -24,12 +24,21 @@ ALPHA   [a-zA-Z]
 
 "def"                       { return DEF; }
 "extern"                    { return EXTERN; }
+"int"                       { return TYPE_INT; }
+"bool"                      { return TYPE_BOOL; }
+"double"                    { return TYPE_DOUBLE; }
+
+"true"                      { yylval.cond = true; return BOOLEAN; }
+"false"                     { yylval.cond = false; return BOOLEAN; }
 
 {ALPHA}({ALPHA}|{DIGIT})*   { yylval.str = new std::string(yytext);
                               return IDENTIFIER; }
 
-({DIGIT}|".")+              { yylval.num = strtod(yytext, nullptr);
-                              return NUMBER; }
+{DIGIT}+"."{DIGIT}*         { yylval.num_double = strtod(yytext, nullptr);
+                              return DOUBLE; }
+
+{DIGIT}+                    { yylval.num_int = strtod(yytext, nullptr);
+                              return INTEGER; }
 
 .                           { return yytext[0]; }
 

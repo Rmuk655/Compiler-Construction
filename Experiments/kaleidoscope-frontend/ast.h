@@ -25,10 +25,19 @@ public:
 
 /// NumberExprAST - Expression class for numeric literals like "1.0".
 class NumberExprAST : public ExprAST {
-  double Val;
+public:
+  enum class LiteralType { Double, Int, Bool };
+
+private:
+  LiteralType Type;
+  double Val_double = 0.0;
+  int Val_int = 0;
+  bool Val_bool = false;
 
 public:
-  NumberExprAST(double Val) : Val(Val) {}
+  NumberExprAST(double Val) : Type(LiteralType::Double), Val_double(Val) {}
+  NumberExprAST(int Val) : Type(LiteralType::Int), Val_int(Val) {}
+  NumberExprAST(bool Val) : Type(LiteralType::Bool), Val_bool(Val) {}
 
   llvm::Value *codegen() override;
 };
@@ -74,10 +83,10 @@ public:
 /// of arguments the function takes).
 class PrototypeAST {
   std::string Name;
-  std::vector<std::string> Args;
+  std::vector<std::vector<std::string>> Args;
 
 public:
-  PrototypeAST(const std::string &Name, std::vector<std::string> Args)
+  PrototypeAST(const std::string &Name, std::vector<std::vector<std::string>> Args)
       : Name(Name), Args(std::move(Args)) {}
 
   llvm::Function *codegen();

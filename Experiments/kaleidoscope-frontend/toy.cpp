@@ -39,7 +39,14 @@ Value *LogErrorV(const char *Str) {
 }
 
 Value *NumberExprAST::codegen() {
-  return ConstantFP::get(*TheContext, APFloat(Val));
+  if(Type == LiteralType::Double) {
+    return ConstantFP::get(*TheContext, APFloat(Val_double));
+  } else if(Type == LiteralType::Int) {
+    return ConstantInt::get(*TheContext, APInt(32, Val_int));
+  } else if(Type == LiteralType::Bool) {
+    return ConstantInt::get(*TheContext, APInt(1, Val_bool));
+  }
+  return LogErrorV("Unknown numeric literal type");
 }
 
 Value *VariableExprAST::codegen() {
@@ -56,19 +63,48 @@ Value *BinaryExprAST::codegen() {
   if (!L || !R)
     return nullptr;
 
-  switch (Op) {
-  case '+':
-    return Builder->CreateFAdd(L, R, "addtmp");
-  case '-':
-    return Builder->CreateFSub(L, R, "subtmp");
-  case '*':
-    return Builder->CreateFMul(L, R, "multmp");
-  case '<':
-    L = Builder->CreateFCmpULT(L, R, "cmptmp");
-    // Convert bool 0/1 to double 0.0 or 1.0
-    return Builder->CreateUIToFP(L, Type::getDoubleTy(*TheContext), "booltmp");
-  default:
-    return LogErrorV("invalid binary operator");
+  if(L->getType() != R->getType()) {
+    return LogErrorV("Type mismatch in binary expression");
+  }
+  if(L->getType()->isIntegerTy(32)){
+    switch (Op) {
+    case '+':
+      return Builder->CreateAdd(L, R, "addtmp");
+    case '-':
+      return Builder->CreateSub(L, R, "subtmp");
+    case '*':
+      return Builder->CreateMul(L, R, "multmp");
+    case '/':
+      return Builder->CreateSDiv(L, R, "divtmp");
+    case '<':
+      return Builder->CreateICmpULT(L, R, "cmptmp");
+    case '>':
+      return Builder->CreateICmpUGT(L, R, "cmptmp");
+    default:
+      return LogErrorV("invalid binary operator");
+    }
+  }
+  else{
+    switch (Op) {
+    case '+':
+      return Builder->CreateFAdd(L, R, "addtmp");
+    case '-':
+      return Builder->CreateFSub(L, R, "subtmp");
+    case '*':
+      return Builder->CreateFMul(L, R, "multmp");
+    case '/':
+      return Builder->CreateFDiv(L, R, "divtmp");
+    case '<':
+      L = Builder->CreateFCmpULT(L, R, "cmptmp");
+      // Convert bool 0/1 to int 0 or 1
+      return Builder->CreateUIToFP(L, Type::getDoubleTy(*TheContext), "booltmp");
+    case '>':
+      L = Builder->CreateFCmpUGT(L, R, "cmptmp");
+      // Convert bool 0/1 to int 0 or 1
+      return Builder->CreateUIToFP(L, Type::getDoubleTy(*TheContext), "booltmp");
+    default:
+      return LogErrorV("invalid binary operator");
+    }
   }
 }
 
@@ -93,10 +129,25 @@ Value *CallExprAST::codegen() {
 }
 
 Function *PrototypeAST::codegen() {
-  // Make the function type:  double(double,double) etc.
-  std::vector<Type *> Doubles(Args.size(), Type::getDoubleTy(*TheContext));
+  std::vector<Type *> ArgTypes;
+
+  for (const auto &Arg : Args) {
+    Type *T = nullptr;
+
+    if (Arg[0] == "int")
+      T = Type::getInt32Ty(*TheContext);
+    else if (Arg[0] == "double")
+      T = Type::getDoubleTy(*TheContext);
+    else if (Arg[0] == "bool")
+      T = Type::getInt1Ty(*TheContext);
+    else
+      return nullptr;
+
+    ArgTypes.push_back(T);
+  }
+
   FunctionType *FT =
-      FunctionType::get(Type::getDoubleTy(*TheContext), Doubles, false);
+      FunctionType::get(Type::getDoubleTy(*TheContext), ArgTypes, false);
 
   Function *F =
       Function::Create(FT, Function::ExternalLinkage, Name, TheModule.get());
@@ -104,7 +155,7 @@ Function *PrototypeAST::codegen() {
   // Set names for all arguments.
   unsigned Idx = 0;
   for (auto &Arg : F->args())
-    Arg.setName(Args[Idx++]);
+    Arg.setName(Args[Idx++][1]);
 
   return F;
 }
@@ -180,7 +231,7 @@ void HandleExtern(std::unique_ptr<PrototypeAST> ProtoAST) {
 void HandleTopLevelExpression(std::unique_ptr<ExprAST> E) {
   // Evaluate a top-level expression into an anonymous function.
   auto Proto = std::make_unique<PrototypeAST>("__anon_expr",
-                                              std::vector<std::string>());
+                                              std::vector<std::vector<std::string>>());
   auto FnAST = std::make_unique<FunctionAST>(std::move(Proto), std::move(E));
   if (auto *FnIR = FnAST->codegen()) {
     fprintf(stderr, "Read top-level expression:");

@@ -1,0 +1,4 @@
+pp1: in case that x gteq 10 and y lt 5 [
+  result = x %% y;
+]
+pp2: otherwise jump to pp1:;

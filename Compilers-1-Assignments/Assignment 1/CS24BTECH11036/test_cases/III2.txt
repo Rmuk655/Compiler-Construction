@@ -1,0 +1,2 @@
+pp11: in case that [ a lt b or c gteq d ] do x = 1;
+pp12: jump to pp11:;

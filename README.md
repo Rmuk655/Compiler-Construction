@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/Rmuk655/Compiler-Construction/actions/workflows/ci.yml/badge.svg)](https://github.com/Rmuk655/Compiler-Construction/actions/workflows/ci.yml)
 
-Compiler construction work done alongside **CS3423 – Compilers 2** (IIT Hyderabad): lexers and parsers, LLVM IR, and Clang tooling. Updated as the work progresses.
+Compiler construction coursework at IIT Hyderabad: the **CS3423 – Compilers 2** work (lexers and parsers, LLVM IR, Clang tooling) in the folders below, and the **CS3320 – Compilers 1** assignments in [`Compilers-1-Assignments/`](Compilers-1-Assignments). Updated as the work progresses.
 
 ## Contents
 
@@ -17,6 +17,7 @@ Compiler construction work done alongside **CS3423 – Compilers 2** (IIT Hydera
 | [`Clang-AST-Passes/`](Clang-AST-Passes) | Mini assignment: AST dump and node analysis (`1-ast-dump/`), plus Clang AST-matcher passes for assignment-in-condition, empty loop bodies and unused locals (`2-ast-matcher-passes/`); includes the write-up PDF | Clang LibTooling, CMake |
 | [`astmatch-skeleton/`](astmatch-skeleton) | Starter skeleton for a Clang AST-matcher tool (`astmatch.cpp` plus `CMakeLists.txt`), provided by the TA; matchers are left to fill in | Clang LibTooling, CMake |
 | [`lex-yacc-mini-language-ta-skeleton/`](lex-yacc-mini-language-ta-skeleton) | Starting skeleton for the lex/yacc mini-language lab (question, partial lexer/parser, sample input), provided by the TA; the worked solution is in `Experiments/lex-yacc/mini-language` | Flex, Bison |
+| [`Compilers-1-Assignments/`](Compilers-1-Assignments) | Compilers 1 (CS3320): a Flex lexer for a small language and hand-written LLVM IR for C programs, with reports | Flex, GCC, Clang/LLVM |
 
 Setup notes for the environment (LLVM 14 / 17, flex, commands used) are in [`Experiments/setup-notes.txt`](Experiments/setup-notes.txt).
 
@@ -41,4 +42,4 @@ clang -x c -S -emit-llvm -O0 -Xclang -disable-O0-optnone -fno-discard-value-name
 opt -passes=dot-cfg temp.ll -disable-output && dot -Tpdf .foo.dot -o foo.pdf
 ```
 
-Generated files (`lex.yy.c`, `*.tab.c`, binaries) are intentionally not committed.
+Generated files (`lex.yy.c`, `*.tab.c`, binaries) are not committed for the Compilers 2 work. `Compilers-1-Assignments/` keeps its original submission files as they were.

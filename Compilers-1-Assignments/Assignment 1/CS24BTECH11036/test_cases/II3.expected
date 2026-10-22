@@ -1,0 +1,7 @@
+LABEL: pp9:
+DATATYPE: string
+IDENTIFIER: s
+OPERATOR: =
+STRING: "tab\tnewline\n"
+SEPARATOR: ;
+

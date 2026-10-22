@@ -1,0 +1,2 @@
+pp7: character flag = "A";
+pp8: [ integer x = 5; ]

@@ -1,0 +1,3 @@
+pp1: /result = total / count;
+pp2: _value = x_2 + _y;
+pp3: @id1 = gt1;

@@ -42,4 +42,4 @@ clang -x c -S -emit-llvm -O0 -Xclang -disable-O0-optnone -fno-discard-value-name
 opt -passes=dot-cfg temp.ll -disable-output && dot -Tpdf .foo.dot -o foo.pdf
 ```
 
-Generated files (`lex.yy.c`, `*.tab.c`, binaries) are intentionally not committed.
+Generated files (`lex.yy.c`, `lex.yy.cpp`, `*.tab.c`, `*.tab.cpp`, binaries) are intentionally not committed; each folder's build instructions regenerate them (for example `make` in `Experiments/kaleidoscope-frontend`).

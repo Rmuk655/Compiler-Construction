@@ -42,4 +42,4 @@ clang -x c -S -emit-llvm -O0 -Xclang -disable-O0-optnone -fno-discard-value-name
 opt -passes=dot-cfg temp.ll -disable-output && dot -Tpdf .foo.dot -o foo.pdf
 ```
 
-Generated files (`lex.yy.c`, `*.tab.c`, binaries) are not committed for the Compilers 2 work. `Compilers-1-Assignments/` keeps its original submission files as they were.
+Generated files (`lex.yy.c`, `*.tab.c`, binaries) are intentionally not committed.

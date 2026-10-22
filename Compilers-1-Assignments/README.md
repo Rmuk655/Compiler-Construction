@@ -30,4 +30,4 @@ clang -S -emit-llvm -O0 Q1a.c -o Q1a.ll
 | `Q2/` | `Q2a` static and `malloc`-allocated arrays, `Q2bi` and `Q2bii` structs |
 | `Q3/` | Ternary operator: IR at `-O0` versus `-O1` |
 
-The lab practice PDFs and the assignment problem statement sit next to each assignment. `archive/` holds an earlier draft of Assignment 2 and the zip that was submitted; nothing in it is used by the instructions above.
+The lab practice PDFs and the assignment problem statement sit next to each assignment.

@@ -1,5 +1,10 @@
 #include <stdio.h>
 
+// Type names used in part (iii). They are signed here (long / int): the committed Q1d.ll
+// uses sext, not zext, for the widening in (iii).
+typedef long uint64;
+typedef int uint32;
+
 int main(){
 	// (i) Assigning Double to an Int (Narrowing)
 	int a = 1;

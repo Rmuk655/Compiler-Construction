@@ -49,5 +49,6 @@ Notes on the committed files:
 
 - The `.ll` files were generated with Clang 17.0.6 (`Q1a`, `Q1b`, `Q2*`) and Clang 18.1.3 (`Q1c`, `Q1d`, `Q3`), so a regeneration with another Clang differs in metadata and data layout.
 - All committed `.ll` files pass `opt -passes=verify`.
-- `Q1d.c` as committed uses `uint64` and `uint32` without declaring them, so it does not compile on its own. Its committed `Q1d.ll` was produced from a version of the file in which they were defined.
-- `Q3/sample.c` is an unfinished sample (it contains the syntax error `int c = b + ;`) and is not used by the report.
+- `Q1d.c` defines `uint64` as `long` and `uint32` as `int` at the top of the file; with those definitions its `main` compiles to exactly the IR in the committed `Q1d.ll` (the widening in part (iii) is a sign extension).
+- `Q3/sample.c` is a small copy-propagation and dead-code example (no IR is committed for it); it compiles with Clang.
+- Every `.c` file in the assignment compiles with `clang -S -emit-llvm -O0`.

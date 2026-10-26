@@ -19,3 +19,7 @@ test_cases/temp.out
 # editor / OS files
 .vscode/
 .DS_Store
+.claude/
+.graphify/
+graphify-out/
+.tools/

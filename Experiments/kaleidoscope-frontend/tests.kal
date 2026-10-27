@@ -1,0 +1,43 @@
+# Run with: ./toy < tests.kal
+# Lines marked ERROR must print an "Error: ..." message and no IR;
+# everything else must print valid IR (no verifier errors).
+
+# ---- Q1: '/' and '>' ----
+def double fdiv(double a double b) a / b;        # fdiv double
+def int    idiv(int a int b) a / b;              # sdiv i32, ret i32
+def bool   igt(int a int b) a > b;               # icmp sgt, ret i1
+def bool   fgt(double a double b) a > b;         # fcmp ogt, ret i1
+def bool   neg(int a) (a - 5) < 0;               # icmp slt (signed)
+1 + 2 * 3 / 4 > 1;                               # '>' lowest, '/' binds like '*'
+def int z(int a) a / 0;                          # ERROR: division by constant zero
+
+# ---- Q2: typing & promotion ----
+def double mix(int a double b) a + b;            # sitofp a, then fadd
+def double lit(double x) x * 2;                  # int literal promoted
+def int bad1(bool a bool b) a + b;               # ERROR: arithmetic on bool
+def bool bad3(bool a bool b) a < b;              # ERROR: comparison on bool
+def int bad2(double x) x;                        # ERROR: implicit double -> int
+def int bad4(int a) a > 0;                       # ERROR: bool returned as int
+def int ok2(double x) int(x);                    # fptosi
+def bool tobool(int x) bool(x);                  # icmp ne x, 0
+def double b2d(bool b) double(b);                # uitofp
+def int b2i(bool b) int(b) + 1;                  # zext
+def int dup(int a double a) a;                   # ERROR: duplicate param
+def int unk(int a) b;                            # ERROR: unknown variable
+.5 + 1;                                          # '.5' is a double literal
+true;                                            # top level: bool -> 1.0
+99999999999 + 1;                                 # ERROR: literal too large
+
+# ---- Q2: calls ----
+extern double sin(double x);
+sin(3);                                          # sitofp 3, then call
+sin(true);                                       # ERROR: bool -> double not implicit
+idiv(7, 2.5);                                    # ERROR: double -> int not implicit
+idiv(7, int(2.5));                               # ok with an explicit cast
+igt(1, 2);                                       # bool result -> 1.0 at top level
+
+# ---- extern / def mismatch ----
+extern int g(int x);
+def double g(double x) x;                        # ERROR: signature mismatch
+def int g(int y) y * 2;                          # ok: matches the extern
+def int g(int y) y;                              # ERROR: redefinition

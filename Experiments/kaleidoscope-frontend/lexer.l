@@ -8,6 +8,9 @@
 
 #include "ast.h"
 #include "parser.tab.h"
+#include <cerrno>
+#include <climits>
+#include <cstdio>
 #include <cstdlib>
 #include <string>
 %}
@@ -34,10 +37,20 @@ ALPHA   [a-zA-Z]
 {ALPHA}({ALPHA}|{DIGIT})*   { yylval.str = new std::string(yytext);
                               return IDENTIFIER; }
 
-{DIGIT}+"."{DIGIT}*         { yylval.num_double = strtod(yytext, nullptr);
+{DIGIT}+"."{DIGIT}*|"."{DIGIT}+ {
+                              yylval.num_double = strtod(yytext, nullptr);
                               return DOUBLE; }
 
-{DIGIT}+                    { yylval.num_int = strtod(yytext, nullptr);
+{DIGIT}+                    { errno = 0;
+                              long V = strtol(yytext, nullptr, 10);
+                              if (errno == ERANGE || V > INT_MAX) {
+                                // Out of range for i32: report it and let the
+                                // parser's error recovery skip the statement.
+                                fprintf(stderr, "Error: integer literal %s "
+                                        "does not fit in int\n", yytext);
+                                return YYerror;
+                              }
+                              yylval.num_int = (int)V;
                               return INTEGER; }
 
 .                           { return yytext[0]; }

@@ -32,12 +32,13 @@ void yyerror(const char *S);
   double num_double;
   int num_int;
   bool cond;
+  VarType ty;
   std::string *str;
   ExprAST *expr;
   PrototypeAST *proto;
   FunctionAST *func;
   std::vector<ExprAST *> *exprs;
-  std::vector<std::vector<std::string>> *typed_params;
+  std::vector<Param> *typed_params;
 }
 
 %define parse.error detailed
@@ -49,7 +50,7 @@ void yyerror(const char *S);
 %token <cond> BOOLEAN
 %token TYPE_DOUBLE TYPE_INT TYPE_BOOL
 
-%type <str> type
+%type <ty> type
 %type <expr> expr
 %type <proto> prototype external
 %type <func> definition
@@ -60,8 +61,8 @@ void yyerror(const char *S);
 %destructor { delete $$; } <str> <expr> <proto> <func> <typed_params>
 %destructor { for (ExprAST *E : *$$) delete E; delete $$; } <exprs>
 
-/* Precedence, lowest first. Matches the old BinopPrecedence table:
-   '<' = 10, '+' '-' = 20, '*' = 40, all left-associative. */
+/* Precedence, lowest first, all left-associative. Extends the old
+   BinopPrecedence table: '<' '>' = 10, '+' '-' = 20, '*' '/' = 40. */
 %left '<' '>'
 %left '+' '-'
 %left '*' '/'
@@ -98,26 +99,29 @@ external
   : EXTERN prototype      { $$ = $2; }
   ;
 
-/// prototype ::= id '(' id* ')'
+/// prototype ::= type id '(' (type id)* ')'
 prototype
-  : IDENTIFIER '(' params ')'
-                          { $$ = new PrototypeAST(*$1, std::move(*$3));
-                            delete $1; delete $3; }
+  : type IDENTIFIER '(' params ')'
+                          { $$ = new PrototypeAST($1, *$2, std::move(*$4));
+                            delete $2; delete $4; }
   ;
 
+/// type ::= 'int' | 'double' | 'bool'
 type
-  : TYPE_INT    { $$ = new std::string("int"); }
-  | TYPE_DOUBLE { $$ = new std::string("double"); }
-  | TYPE_BOOL   { $$ = new std::string("bool"); }
+  : TYPE_INT              { $$ = VarType::Int; }
+  | TYPE_DOUBLE           { $$ = VarType::Double; }
+  | TYPE_BOOL             { $$ = VarType::Bool; }
   ;
 
 params
-  : %empty                 { $$ = new std::vector<std::vector<std::string>>(); }
-  | params type IDENTIFIER { $1->push_back({*$2, *$3}); delete $2; delete $3; $$ = $1; }
+  : %empty                { $$ = new std::vector<Param>(); }
+  | params type IDENTIFIER
+                          { $1->push_back({$2, *$3}); delete $3; $$ = $1; }
   ;
 
 /// expression
-///   ::= numberexpr | identifierexpr | parenexpr | expression binop expression
+///   ::= numberexpr | identifierexpr | parenexpr | castexpr
+///     | expression binop expression
 expr
   : DOUBLE                { $$ = new NumberExprAST($1); }
   | INTEGER               { $$ = new NumberExprAST($1); }
@@ -132,6 +136,7 @@ expr
                             $$ = new CallExprAST(*$1, std::move(Args));
                             delete $1; }
   | '(' expr ')'          { $$ = $2; }
+  | type '(' expr ')'     { $$ = new CastExprAST($1, std::unique_ptr<ExprAST>($3)); }
   | expr '<' expr         { $$ = new BinaryExprAST('<', std::unique_ptr<ExprAST>($1),
                                                         std::unique_ptr<ExprAST>($3)); }
   | expr '>' expr         { $$ = new BinaryExprAST('>', std::unique_ptr<ExprAST>($1),

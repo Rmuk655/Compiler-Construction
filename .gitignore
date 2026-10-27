@@ -10,8 +10,8 @@ lex.yy.cpp
 *.o
 *.exe
 a.out
-Compilers-1-Assignments/Assignment-1-Lexer/lexer
-Experiments/kaleidoscope-frontend/toy
+Lexer-and-IR-Programs/Lexer-Project/lexer
+Kaleidoscope/kaleidoscope-frontend/toy
 
 # test scratch output
 test_cases/temp.out

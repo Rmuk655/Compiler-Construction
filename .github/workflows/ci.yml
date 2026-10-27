@@ -8,5 +8,5 @@ jobs:
       - name: Install flex and bison
         run: sudo apt-get update && sudo apt-get install -y flex bison
       - name: Build and run the Tcl to C++ transpiler tests
-        working-directory: Tcl-to-Cpp-Transpiler/Qn3/build
+        working-directory: Lexing-and-Parsing/Tcl-to-Cpp-Transpiler/Qn3/build
         run: make test

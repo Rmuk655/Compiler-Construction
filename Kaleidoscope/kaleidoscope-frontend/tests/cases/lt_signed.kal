@@ -1,0 +1,1 @@
+def bool neg(int a) (a - 5) < 0;

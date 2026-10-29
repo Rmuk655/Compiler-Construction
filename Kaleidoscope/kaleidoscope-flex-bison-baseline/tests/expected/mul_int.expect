@@ -1,0 +1,2 @@
+mul i32 %a, %b
+ret double %inttmp

@@ -1,0 +1,2 @@
+Error: Type mismatch in binary expression
+!define double @mix

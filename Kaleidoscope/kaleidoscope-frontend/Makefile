@@ -15,3 +15,7 @@ clean:
 	rm -f toy parser.tab.cpp parser.tab.h lex.yy.cpp
 
 .PHONY: clean
+test: toy
+	./runtests.sh ./toy
+
+.PHONY: test

@@ -1,0 +1,2 @@
+define double @fdiv(double %a, double %b)
+fdiv double %a, %b

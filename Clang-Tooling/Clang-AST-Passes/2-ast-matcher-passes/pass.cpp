@@ -14,6 +14,7 @@
 #include "clang/Basic/FileManager.h"
 
 #include <set>
+#include <vector>
 
 using namespace std;
 using namespace clang;
@@ -42,7 +43,10 @@ StatementMatcher refs = declRefExpr(to(varDecl(hasLocalStorage()))).bind("ref");
 class Simple_Pass_Handler : public MatchFinder::MatchCallback
 {
 public:
-  set<const VarDecl *> DeclaredVars, ReferencedVars;
+  // DeclaredVars is a vector so the unused variables are reported in source order
+  // (a set of pointers would give a different order on every run).
+  vector<const VarDecl *> DeclaredVars;
+  set<const VarDecl *> ReferencedVars;
   virtual void run(const MatchFinder::MatchResult &Result) override
   {
     if (auto *A = Result.Nodes.getNodeAs<BinaryOperator>("assignment"))
@@ -55,7 +59,7 @@ public:
     }
     else if (auto *V = Result.Nodes.getNodeAs<VarDecl>("var"))
     {
-      DeclaredVars.insert(V);
+      DeclaredVars.push_back(V);
     }
     else if (auto *R = Result.Nodes.getNodeAs<DeclRefExpr>("ref"))
     {

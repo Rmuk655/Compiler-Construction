@@ -1,14 +1,20 @@
 %{
     #include "parser.tab.h"
     #include <stdlib.h>
+    #include <errno.h>
+    #include <limits.h>
     int yyerror(char *s);
 %}
 
-MINUS   -
 %%
-{MINUS}[0-9]+ { yylval = atoi(yytext); return INTEGER; }
-[0-9]+ { yylval = atoi(yytext); return INTEGER; }
-[+*()\n] { return *yytext; }
+[0-9]+ {
+    errno = 0;
+    long v = strtol(yytext, NULL, 10);
+    if (errno == ERANGE || v > INT_MAX) { yyerror("integer too large"); return BAD; }
+    yylval = (int) v;
+    return INTEGER;
+}
+[-+*()\n] { return *yytext; }
 [ \t] ; /* skip whitespace */
 . { yyerror("invalid character"); } /**/
 %%

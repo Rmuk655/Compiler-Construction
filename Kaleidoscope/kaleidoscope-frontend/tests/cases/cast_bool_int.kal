@@ -1,0 +1,1 @@
+def int b2i(bool b) int(b) + 1;

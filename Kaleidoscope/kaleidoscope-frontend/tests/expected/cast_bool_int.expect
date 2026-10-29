@@ -1,0 +1,2 @@
+zext i1 %b to i32
+add i32

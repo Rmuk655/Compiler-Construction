@@ -1,0 +1,2 @@
+Error: operator '+': operands cannot be bool
+!define i32 @bad1

@@ -1,0 +1,4 @@
+define double @add(i32 %a, i32 %b)
+add i32 %a, %b
+sitofp i32 %addtmp to double
+ret double %inttmp

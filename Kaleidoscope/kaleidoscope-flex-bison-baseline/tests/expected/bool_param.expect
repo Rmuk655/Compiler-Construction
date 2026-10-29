@@ -1,0 +1,2 @@
+define double @ident(i1 %a)
+uitofp i1 %a to double

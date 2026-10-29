@@ -1,0 +1,5 @@
+DATATYPE: string
+IDENTIFIER: s
+OPERATOR: =
+STRING: "a b"
+SEPARATOR: ;

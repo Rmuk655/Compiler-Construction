@@ -22,8 +22,8 @@ using namespace llvm;
 static llvm::cl::OptionCategory Simple_Pass("Simple_Pass options");
 
 // write matchers here..
-DeclarationMatcher func = functionDecl(isDefinition()).bind("function");
-DeclarationMatcher var = varDecl(unless(parmVarDecl())).bind("variable");
+DeclarationMatcher func = functionDecl(isDefinition(), isExpansionInMainFile()).bind("function");
+DeclarationMatcher var = varDecl(unless(parmVarDecl()), isExpansionInMainFile()).bind("variable");
 
 class Simple_Pass_Handler : public MatchFinder::MatchCallback {
 public:

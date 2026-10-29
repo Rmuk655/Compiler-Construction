@@ -1,12 +1,41 @@
 name: CI
 on: [push, pull_request]
 jobs:
-  transpiler:
+  flex-bison:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install flex and bison
-        run: sudo apt-get update && sudo apt-get install -y flex bison
-      - name: Build and run the Tcl to C++ transpiler tests
+      - name: Install flex, bison and CMake
+        run: sudo apt-get update && sudo apt-get install -y flex bison cmake
+      - name: Tcl to C++ transpiler (original in-place Makefile)
         working-directory: Lexing-and-Parsing/Tcl-to-Cpp-Transpiler/Qn3/build
         run: make test
+      - name: Tcl to C++ transpiler (20 tests)
+        working-directory: Lexing-and-Parsing/Tcl-to-Cpp-Transpiler/Qn3
+        run: make test
+      - name: Flex and bison conflict checks (Q1, Q2)
+        working-directory: Lexing-and-Parsing/Tcl-to-Cpp-Transpiler
+        run: make test
+      - name: Calculator
+        working-directory: Lexing-and-Parsing/lex-yacc/calculator
+        run: make test
+      - name: pp lexer
+        working-directory: Lexer-and-IR-Programs/Lexer-Project
+        run: make test
+      - name: BeeScript interpreter (make)
+        working-directory: BeeScript-Stack-Machine-Interpreter
+        run: make test
+      - name: BeeScript interpreter (CMake and CTest)
+        working-directory: BeeScript-Stack-Machine-Interpreter
+        run: cmake -S . -B build-cmake && cmake --build build-cmake && ctest --test-dir build-cmake --output-on-failure
+  llvm-ir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install clang and LLVM
+        run: sudo apt-get update && sudo apt-get install -y clang llvm
+      - name: IR checks
+        run: |
+          for d in LLVM-IR/LLVM-IR-Explorer LLVM-IR/llvm-ir-and-cfg Lexer-and-IR-Programs/LLVM-IR-Project; do
+            (cd "$d" && ./runtests.sh)
+          done

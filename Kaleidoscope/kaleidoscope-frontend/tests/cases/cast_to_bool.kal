@@ -1,0 +1,1 @@
+def bool tobool(int x) bool(x);

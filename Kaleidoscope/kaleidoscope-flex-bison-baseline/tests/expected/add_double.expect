@@ -1,0 +1,2 @@
+fadd double %a, %b
+ret double %addtmp

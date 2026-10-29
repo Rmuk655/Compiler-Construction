@@ -1,0 +1,8 @@
+set x 1;
+set y 0;
+if ($x > 5) {
+    set y 1;
+} else {
+    set y 9;
+}
+puts "$y";

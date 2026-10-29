@@ -1,0 +1,2 @@
+fcmp olt double %a, %b
+uitofp i1 %cmptmp to double

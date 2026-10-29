@@ -23,3 +23,12 @@ test_cases/temp.out
 .graphify/
 graphify-out/
 .tools/
+
+# BeeScript build directory
+BeeScript-Stack-Machine-Interpreter/build/
+Lexer-and-IR-Programs/Lexer-Project/build/
+Lexing-and-Parsing/lex-yacc/calculator/build/
+Lexing-and-Parsing/Tcl-to-Cpp-Transpiler/Qn3/out/
+Kaleidoscope/kaleidoscope-frontend/toy
+BeeScript-Stack-Machine-Interpreter/build-cmake/
+Kaleidoscope/kaleidoscope-flex-bison-baseline/toy

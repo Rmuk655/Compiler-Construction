@@ -1,0 +1,2 @@
+extern sin(double x);
+def s(double y) sin(y);

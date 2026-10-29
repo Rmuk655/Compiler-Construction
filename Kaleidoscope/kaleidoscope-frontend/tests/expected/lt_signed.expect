@@ -1,0 +1,2 @@
+sub i32 %a, 5
+icmp slt i32

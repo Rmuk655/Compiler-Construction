@@ -1,0 +1,2 @@
+mul i32 %b, %c
+add i32 %a, %multmp

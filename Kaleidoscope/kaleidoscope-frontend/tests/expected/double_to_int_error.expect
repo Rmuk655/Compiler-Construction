@@ -1,0 +1,2 @@
+cannot implicitly convert double to int
+!define i32 @bad2

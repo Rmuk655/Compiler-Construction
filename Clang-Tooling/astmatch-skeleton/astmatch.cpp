@@ -22,6 +22,7 @@ using namespace llvm;
 static llvm::cl::OptionCategory Simple_Pass("Simple_Pass options");
 
 // write matchers here..
+StatementMatcher forstmt = forStmt();
 
 class Simple_Pass_Handler : public MatchFinder::MatchCallback {
 public:

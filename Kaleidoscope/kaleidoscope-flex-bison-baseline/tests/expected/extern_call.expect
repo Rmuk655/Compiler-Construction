@@ -1,0 +1,2 @@
+declare double @sin(double)
+call double @sin(double %y)

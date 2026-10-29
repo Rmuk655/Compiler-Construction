@@ -1,0 +1,2 @@
+sitofp i32 %a to double
+fadd double

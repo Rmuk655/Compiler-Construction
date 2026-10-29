@@ -1,0 +1,2 @@
+define double @__anon_expr()
+ret double 1.000000e+00

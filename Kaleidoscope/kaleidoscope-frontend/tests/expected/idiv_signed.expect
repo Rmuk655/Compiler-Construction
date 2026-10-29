@@ -1,0 +1,2 @@
+define i32 @idiv
+sdiv i32 %a, %b

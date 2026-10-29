@@ -77,9 +77,9 @@ Value *BinaryExprAST::codegen() {
     case '/':
       return Builder->CreateSDiv(L, R, "divtmp");
     case '<':
-      return Builder->CreateICmpULT(L, R, "cmptmp");
+      return Builder->CreateICmpSLT(L, R, "cmptmp");
     case '>':
-      return Builder->CreateICmpUGT(L, R, "cmptmp");
+      return Builder->CreateICmpSGT(L, R, "cmptmp");
     default:
       return LogErrorV("invalid binary operator");
     }
@@ -95,11 +95,11 @@ Value *BinaryExprAST::codegen() {
     case '/':
       return Builder->CreateFDiv(L, R, "divtmp");
     case '<':
-      L = Builder->CreateFCmpULT(L, R, "cmptmp");
+      L = Builder->CreateFCmpOLT(L, R, "cmptmp");
       // Convert bool 0/1 to int 0 or 1
       return Builder->CreateUIToFP(L, Type::getDoubleTy(*TheContext), "booltmp");
     case '>':
-      L = Builder->CreateFCmpUGT(L, R, "cmptmp");
+      L = Builder->CreateFCmpOGT(L, R, "cmptmp");
       // Convert bool 0/1 to int 0 or 1
       return Builder->CreateUIToFP(L, Type::getDoubleTy(*TheContext), "booltmp");
     default:
@@ -183,11 +183,21 @@ Function *FunctionAST::codegen() {
     NamedValues[std::string(Arg.getName())] = &Arg;
 
   if (Value *RetVal = Body->codegen()) {
+    // Every function returns double, so convert an int or bool result first.
+    if (!RetVal->getType()->isDoubleTy()) {
+      if (RetVal->getType()->isIntegerTy(1))
+        RetVal = Builder->CreateUIToFP(RetVal, Type::getDoubleTy(*TheContext), "booltmp");
+      else
+        RetVal = Builder->CreateSIToFP(RetVal, Type::getDoubleTy(*TheContext), "inttmp");
+    }
     // Finish off the function.
     Builder->CreateRet(RetVal);
 
     // Validate the generated code, checking for consistency.
-    verifyFunction(*TheFunction);
+    if (verifyFunction(*TheFunction, &errs())) {
+      TheFunction->eraseFromParent();
+      return nullptr;
+    }
 
     return TheFunction;
   }

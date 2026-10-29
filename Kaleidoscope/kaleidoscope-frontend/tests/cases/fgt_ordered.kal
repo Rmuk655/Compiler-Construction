@@ -1,0 +1,1 @@
+def bool fgt(double a double b) a > b;

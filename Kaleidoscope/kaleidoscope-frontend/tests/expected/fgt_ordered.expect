@@ -1,0 +1,2 @@
+define i1 @fgt
+fcmp ogt double %a, %b

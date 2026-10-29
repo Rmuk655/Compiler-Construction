@@ -18,6 +18,10 @@
     sym sym_table[100];
     int sym_cnt = 0;
     void add(char *name, int is_float){
+        if(sym_cnt >= 100){
+            fprintf(stderr, "error: too many variables (limit is 100)\n");
+            exit(1);
+        }
         sym_table[sym_cnt].name = strdup(name);
         sym_table[sym_cnt].is_float = is_float;
         sym_cnt++;
@@ -29,6 +33,12 @@
             }
         }
         return -1;
+    }
+    void require_defined(char *name){
+        if(lookup(name) == -1){
+            fprintf(stderr, "error: undefined variable '%s'\n", name);
+            exit(1);
+        }
     }
 %}
 
@@ -75,8 +85,8 @@ statement:
         }
         expr_is_float = 0;
     }
-    | PUTS '\"' IDENTIFIER '\"' ';' { indent(); printf("cout << %s << \"\\n\";\n", $3); }
-    | PRINT '\"' IDENTIFIER '\"' ';' { indent(); printf("cout << %s << \"\\n\";\n", $3); }
+    | PUTS '\"' IDENTIFIER '\"' ';' { require_defined($3); indent(); printf("cout << %s << \"\\n\";\n", $3); }
+    | PRINT '\"' IDENTIFIER '\"' ';' { require_defined($3); indent(); printf("cout << %s << \"\\n\";\n", $3); }
     | IF '(' condition ')' { indent(); printf("if(%s){\n", $3); expr_is_float = 0; depth++;} 
     '{' statements '}' { depth--; indent(); printf("}\n"); } else_part
     | WHILE '(' condition ')' { indent(); printf("while(%s){\n", $3); expr_is_float = 0; depth++;}
@@ -115,10 +125,11 @@ term: term '*' factor
     ;   
 
 factor: INTEGER { $$ = malloc(20); sprintf($$, "%d", $1); }
-    | FLOAT { expr_is_float = 1; $$ = malloc(30); sprintf($$, "%f", $1); }
+    | FLOAT { expr_is_float = 1; $$ = malloc(64); sprintf($$, "%f", $1); }
     | IDENTIFIER 
     {   
         $$ = strdup($1); 
+        require_defined($1);
         if (lookup($1) == 1)
             expr_is_float = 1;
     }
@@ -145,7 +156,9 @@ int yyerror(char *s){
 
 int main(){
     printf("#include <iostream>\n\nusing namespace std;\n\nint main(){\n");
-    yyparse();
+    if(yyparse() != 0){
+        return 1;
+    }
     printf("    return 0;\n}\n");
     return 0;
 }

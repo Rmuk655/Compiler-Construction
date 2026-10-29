@@ -6,14 +6,17 @@
 %}
 
 %token INTEGER
+%token BAD
 
 %%
 program: program expr '\n' { printf("%d\n", $2); }
+    | program error '\n' { yyerrok; }
     | program '\n'  { exit(0); }
     |
     ;
 
 expr: expr '+' term { $$ = $1 + $3; }
+    | expr '-' term { $$ = $1 - $3; }
     | term { $$ = $1; }
 
 term: term '*' factor { $$ = $1 * $3; }
@@ -21,6 +24,7 @@ term: term '*' factor { $$ = $1 * $3; }
 
 factor: INTEGER { $$ = $1; }
     | '(' expr ')'      { $$ = $2; }
+    | '-' factor        { $$ = -$2; }
     ;
 
 %%

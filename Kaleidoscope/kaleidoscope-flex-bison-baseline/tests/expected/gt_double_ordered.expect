@@ -1,0 +1,1 @@
+fcmp ogt double %a, %b

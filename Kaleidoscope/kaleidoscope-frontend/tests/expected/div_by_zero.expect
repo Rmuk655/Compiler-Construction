@@ -1,0 +1,2 @@
+Error: integer division by constant zero
+!define i32 @z

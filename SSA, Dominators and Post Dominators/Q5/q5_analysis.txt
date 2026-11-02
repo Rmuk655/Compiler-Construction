@@ -1,0 +1,72 @@
+]633;E;echo "LLVM mem2reg Pass-Manager Analysis";730ebe59-9b30-4402-afc1-01c5ae02df19]633;CLLVM mem2reg Pass-Manager Analysis
+LLVM version: 18.1.3
+
+========== PROGRAM 1 ==========
+Running analysis: InnerAnalysisManagerProxy<FunctionAnalysisManager, Module> on [module]
+Running pass: PromotePass on _Z12basicPointeri (14 instructions)
+Running analysis: DominatorTreeAnalysis on _Z12basicPointeri
+Running analysis: AssumptionAnalysis on _Z12basicPointeri
+Running analysis: TargetIRAnalysis on _Z12basicPointeri
+Running pass: PromotePass on main (4 instructions)
+Running analysis: DominatorTreeAnalysis on main
+Running analysis: AssumptionAnalysis on main
+Running analysis: TargetIRAnalysis on main
+Running pass: VerifierPass on [module]
+Running analysis: VerifierAnalysis on [module]
+
+========== PROGRAM 2 ==========
+Running analysis: InnerAnalysisManagerProxy<FunctionAnalysisManager, Module> on [module]
+Running pass: PromotePass on _Z18conditionalPointeri (22 instructions)
+Running analysis: DominatorTreeAnalysis on _Z18conditionalPointeri
+Running analysis: AssumptionAnalysis on _Z18conditionalPointeri
+Running analysis: TargetIRAnalysis on _Z18conditionalPointeri
+Running pass: PromotePass on main (7 instructions)
+Running analysis: DominatorTreeAnalysis on main
+Running analysis: AssumptionAnalysis on main
+Running analysis: TargetIRAnalysis on main
+Running pass: VerifierPass on [module]
+Running analysis: VerifierAnalysis on [module]
+
+========== PROGRAM 3 ==========
+Running analysis: InnerAnalysisManagerProxy<FunctionAnalysisManager, Module> on [module]
+Running pass: PromotePass on _Z6modifyPi (9 instructions)
+Running analysis: DominatorTreeAnalysis on _Z6modifyPi
+Running analysis: AssumptionAnalysis on _Z6modifyPi
+Running analysis: TargetIRAnalysis on _Z6modifyPi
+Running pass: PromotePass on _Z13pointerEscapei (11 instructions)
+Running analysis: DominatorTreeAnalysis on _Z13pointerEscapei
+Running analysis: AssumptionAnalysis on _Z13pointerEscapei
+Running analysis: TargetIRAnalysis on _Z13pointerEscapei
+Running pass: PromotePass on main (4 instructions)
+Running analysis: DominatorTreeAnalysis on main
+Running analysis: AssumptionAnalysis on main
+Running analysis: TargetIRAnalysis on main
+Running pass: VerifierPass on [module]
+Running analysis: VerifierAnalysis on [module]
+
+========== PROGRAM 4 ==========
+Running analysis: InnerAnalysisManagerProxy<FunctionAnalysisManager, Module> on [module]
+Running pass: PromotePass on _Z12arrayPointeri (36 instructions)
+Running analysis: DominatorTreeAnalysis on _Z12arrayPointeri
+Running analysis: AssumptionAnalysis on _Z12arrayPointeri
+Running analysis: TargetIRAnalysis on _Z12arrayPointeri
+Running pass: PromotePass on main (4 instructions)
+Running analysis: DominatorTreeAnalysis on main
+Running analysis: AssumptionAnalysis on main
+Running analysis: TargetIRAnalysis on main
+Running pass: VerifierPass on [module]
+Running analysis: VerifierAnalysis on [module]
+
+========== PROGRAM 5 ==========
+Running analysis: InnerAnalysisManagerProxy<FunctionAnalysisManager, Module> on [module]
+Running pass: PromotePass on _Z11heapPointeri (48 instructions)
+Running analysis: DominatorTreeAnalysis on _Z11heapPointeri
+Running analysis: AssumptionAnalysis on _Z11heapPointeri
+Running analysis: TargetIRAnalysis on _Z11heapPointeri
+Running pass: PromotePass on main (4 instructions)
+Running analysis: DominatorTreeAnalysis on main
+Running analysis: AssumptionAnalysis on main
+Running analysis: TargetIRAnalysis on main
+Running pass: VerifierPass on [module]
+Running analysis: VerifierAnalysis on [module]
+

@@ -1,0 +1,324 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=0.8in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage[T1]{fontenc}
+
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
+
+\lstset{
+    language=C++,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue!60!black}\bfseries,
+    commentstyle=\color{gray}\itshape,
+    breaklines=true,
+    frame=single,
+    columns=fullflexible
+}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\graphs}[1]{%
+  \begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.32\textwidth}\centering
+      \includegraphics[width=\linewidth,height=8cm,keepaspectratio]{trees/#1_cfg.pdf}
+      \caption{CFG}
+    \end{subfigure}\hfill
+    \begin{subfigure}[b]{0.32\textwidth}\centering
+      \includegraphics[width=\linewidth,height=8cm,keepaspectratio]{trees/#1_dom.pdf}
+      \caption{Dominator tree}
+    \end{subfigure}\hfill
+    \begin{subfigure}[b]{0.32\textwidth}\centering
+      \includegraphics[width=\linewidth,height=8cm,keepaspectratio]{trees/#1_postdom.pdf}
+      \caption{Post-dominator tree}
+    \end{subfigure}
+  \end{figure}}
+
+\title{\textbf{Mini Assignment: SSA, Dominators and Post Dominators}\\
+\large Question 1: Dominators and Post Dominators}
+\author{CS3423 -- Compilers II}
+\date{November 2026}
+
+\begin{document}
+\maketitle
+
+\section{Dominators vs.\ post-dominators}
+
+A block $A$ \emph{dominates} block $B$ if you can't reach $B$ from the
+entry without passing through $A$ first. A \emph{post-dominator} is the
+same idea run backwards: $A$ post-dominates $B$ if every path from $B$
+to the exit goes through $A$. So dominators tell you what has definitely
+run \emph{before} a block, and post-dominators tell you what will
+definitely run \emph{after} it.
+
+\section{How the trees were made}
+
+Each program was compiled to LLVM IR with
+\begin{lstlisting}[language=bash]
+clang++ -std=c++17 -S -emit-llvm -O0 -Xclang -disable-O0-optnone \
+        -fno-discard-value-names N.cpp -o IR/N.ll
+\end{lstlisting}
+\texttt{-fno-discard-value-names} keeps readable block names like
+\texttt{if.then} and \texttt{for.cond} instead of \texttt{\%5}. The trees
+were then printed with
+\texttt{opt -passes='print<domtree>,print<postdomtree>'}
+(output saved in \texttt{trees/N.txt}) and drawn with LLVM's
+\texttt{dot-cfg-only}, \texttt{dot-dom-only} and \texttt{dot-post-dom-only}
+passes. Running \texttt{./run.sh} redoes all of this.
+
+A few notes for reading the tables:
+\begin{itemize}
+  \item Every block dominates and post-dominates itself, so the lists only
+        show the \emph{strict} relations.
+  \item \textbf{idom} / \textbf{ipdom} are the immediate dominator and
+        immediate post-dominator, i.e.\ the parent in each tree.
+  \item LLVM puts a virtual \texttt{exit} node at the root of the
+        post-dominator tree, which is why the function's last block has
+        \texttt{exit} as its ipdom.
+  \item Only the interesting function in each file is shown. \texttt{main}
+        is a single block, so its trees are trivial.
+\end{itemize}
+
+%=====================================================================
+\newpage
+\section{Program 1: if / else-if / else ladder}
+
+\begin{lstlisting}
+int classify(int x) {
+    int result;
+    if (x < 0) {
+        result = -1;
+    } else if (x == 0) {
+        result = 0;
+    } else {
+        if (x % 2 == 0)
+            result = 2;     // positive even
+        else
+            result = 1;     // positive odd
+    }
+    return result;
+}
+\end{lstlisting}
+
+\graphs{1}
+
+{\small
+\noindent\begin{tabularx}{\textwidth}{@{}l l l Y Y@{}}
+\toprule
+Block & idom & ipdom & Dominates & Post-dominates \\
+\midrule
+\texttt{entry} & -- & \texttt{if.end8} & all other blocks & -- \\
+\texttt{if.then} & \texttt{entry} & \texttt{if.end8} & -- & -- \\
+\texttt{if.else} & \texttt{entry} & \texttt{if.end7} & \texttt{if.then2, if.else3, if.then5, if.else6, if.end, if.end7} & -- \\
+\texttt{if.then2} & \texttt{if.else} & \texttt{if.end7} & -- & -- \\
+\texttt{if.else3} & \texttt{if.else} & \texttt{if.end} & \texttt{if.then5, if.else6, if.end} & -- \\
+\texttt{if.then5} & \texttt{if.else3} & \texttt{if.end} & -- & -- \\
+\texttt{if.else6} & \texttt{if.else3} & \texttt{if.end} & -- & -- \\
+\texttt{if.end} & \texttt{if.else3} & \texttt{if.end7} & -- & \texttt{if.else3, if.then5, if.else6} \\
+\texttt{if.end7} & \texttt{if.else} & \texttt{if.end8} & -- & \texttt{if.else, if.then2, if.else3, if.then5, if.else6, if.end} \\
+\texttt{if.end8} & \texttt{entry} & \texttt{exit} & -- & all other blocks \\
+\bottomrule
+\end{tabularx}}
+
+\medskip
+\noindent\textbf{What stands out:} \texttt{if.end8} is the only way out,
+so it post-dominates every block. But its immediate dominator is
+\texttt{entry}, not \texttt{if.end7}, because the \texttt{x < 0} branch
+jumps straight to it. The nested if-else is what gives both trees their
+staircase shape.
+
+%=====================================================================
+\newpage
+\section{Program 2: for loop with continue and break}
+
+\begin{lstlisting}
+int sumOdd(int n, int limit) {
+    int sum = 0;
+    for (int i = 1; i <= n; i++) {
+        if (i % 2 == 0)
+            continue;
+        sum += i;
+        if (sum > limit)
+            break;
+    }
+    return sum;
+}
+\end{lstlisting}
+
+\graphs{2}
+
+{\small
+\noindent\begin{tabularx}{\textwidth}{@{}l l l Y Y@{}}
+\toprule
+Block & idom & ipdom & Dominates & Post-dominates \\
+\midrule
+\texttt{entry} & -- & \texttt{for.cond} & all other blocks & -- \\
+\texttt{for.cond} & \texttt{entry} & \texttt{for.end} & \texttt{for.body, if.then, if.end, if.then3, if.end4, for.inc, for.end} & \texttt{entry, if.then, if.end4, for.inc} \\
+\texttt{for.body} & \texttt{for.cond} & \texttt{for.end} & \texttt{if.then, if.end, if.then3, if.end4, for.inc} & -- \\
+\texttt{if.then} & \texttt{for.body} & \texttt{for.inc} & -- & -- \\
+\texttt{if.end} & \texttt{for.body} & \texttt{for.end} & \texttt{if.then3, if.end4} & -- \\
+\texttt{if.then3} & \texttt{if.end} & \texttt{for.end} & -- & -- \\
+\texttt{if.end4} & \texttt{if.end} & \texttt{for.inc} & -- & -- \\
+\texttt{for.inc} & \texttt{for.body} & \texttt{for.cond} & -- & \texttt{if.then, if.end4} \\
+\texttt{for.end} & \texttt{for.cond} & \texttt{exit} & -- & all other blocks \\
+\bottomrule
+\end{tabularx}}
+
+\medskip
+\noindent\textbf{What stands out:} the \texttt{break} changes things.
+Since \texttt{if.then3} jumps straight to \texttt{for.end}, the loop
+header \texttt{for.cond} no longer post-dominates \texttt{for.body} or
+\texttt{if.end}. The \texttt{continue} path (\texttt{if.then}) still goes
+through \texttt{for.inc}, so \texttt{for.inc} post-dominates it.
+
+%=====================================================================
+\newpage
+\section{Program 3: while loop with \texttt{\&\&} and an if-else}
+
+\begin{lstlisting}
+int collatzSteps(int n) {
+    int steps = 0;
+    while (n != 1 && steps < 1000) {
+        if (n % 2 == 0)
+            n = n / 2;
+        else
+            n = 3 * n + 1;
+        steps++;
+    }
+    return steps;
+}
+\end{lstlisting}
+
+\graphs{3}
+
+{\small
+\noindent\begin{tabularx}{\textwidth}{@{}l l l Y Y@{}}
+\toprule
+Block & idom & ipdom & Dominates & Post-dominates \\
+\midrule
+\texttt{entry} & -- & \texttt{while.cond} & all other blocks & -- \\
+\texttt{while.cond} & \texttt{entry} & \texttt{land.end} & \texttt{land.rhs, land.end, while.body, if.then, if.else, if.end, while.end} & \texttt{entry, while.body, if.then, if.else, if.end} \\
+\texttt{land.rhs} & \texttt{while.cond} & \texttt{land.end} & -- & -- \\
+\texttt{land.end} & \texttt{while.cond} & \texttt{while.end} & \texttt{while.body, if.then, if.else, if.end, while.end} & \texttt{entry, while.cond, land.rhs, while.body, if.then, if.else, if.end} \\
+\texttt{while.body} & \texttt{land.end} & \texttt{if.end} & \texttt{if.then, if.else, if.end} & -- \\
+\texttt{if.then} & \texttt{while.body} & \texttt{if.end} & -- & -- \\
+\texttt{if.else} & \texttt{while.body} & \texttt{if.end} & -- & -- \\
+\texttt{if.end} & \texttt{while.body} & \texttt{while.cond} & -- & \texttt{while.body, if.then, if.else} \\
+\texttt{while.end} & \texttt{land.end} & \texttt{exit} & -- & all other blocks \\
+\bottomrule
+\end{tabularx}}
+
+\medskip
+\noindent\textbf{What stands out:} the short-circuit \texttt{\&\&} splits
+the loop test into three blocks. \texttt{land.rhs} can be skipped (when
+\texttt{n == 1}), so it dominates nothing, while \texttt{land.end}, where
+both halves meet, post-dominates \texttt{while.cond}. The if-else in the
+body is the usual diamond: \texttt{while.body} dominates both arms and
+\texttt{if.end} post-dominates them.
+
+%=====================================================================
+\newpage
+\section{Program 4: do-while with a switch}
+
+\begin{lstlisting}
+int wordScore(const char *s) {
+    int score = 0;
+    int i = 0;
+    do {
+        switch (s[i]) {
+        case 'a': case 'e': case 'i': case 'o': case 'u':
+            score += 2;
+            break;
+        case ' ':
+            break;
+        default:
+            score += 1;
+        }
+        i++;
+    } while (s[i] != '\0');
+    return score;
+}
+\end{lstlisting}
+
+\graphs{4}
+
+{\small
+\noindent\begin{tabularx}{\textwidth}{@{}l l l Y Y@{}}
+\toprule
+Block & idom & ipdom & Dominates & Post-dominates \\
+\midrule
+\texttt{entry} & -- & \texttt{do.body} & all other blocks & -- \\
+\texttt{do.body} & \texttt{entry} & \texttt{sw.epilog} & \texttt{sw.bb, sw.bb1, sw.default, sw.epilog, do.cond, do.end} & \texttt{entry} \\
+\texttt{sw.bb} & \texttt{do.body} & \texttt{sw.epilog} & -- & -- \\
+\texttt{sw.bb1} & \texttt{do.body} & \texttt{sw.epilog} & -- & -- \\
+\texttt{sw.default} & \texttt{do.body} & \texttt{sw.epilog} & -- & -- \\
+\texttt{sw.epilog} & \texttt{do.body} & \texttt{do.cond} & \texttt{do.cond, do.end} & \texttt{entry, do.body, sw.bb, sw.bb1, sw.default} \\
+\texttt{do.cond} & \texttt{sw.epilog} & \texttt{do.end} & \texttt{do.end} & \texttt{entry, do.body, sw.bb, sw.bb1, sw.default, sw.epilog} \\
+\texttt{do.end} & \texttt{do.cond} & \texttt{exit} & -- & all other blocks \\
+\bottomrule
+\end{tabularx}}
+
+\medskip
+\noindent\textbf{What stands out:} a do-while always runs its body once,
+so \texttt{do.body}, \texttt{sw.epilog}, \texttt{do.cond} and
+\texttt{do.end} form a straight chain in the dominator tree. All three
+switch arms (the vowel case, the space case and default) meet at
+\texttt{sw.epilog}, which makes it their immediate post-dominator.
+
+%=====================================================================
+\newpage
+\section{Program 5: nested for loops with an early return}
+
+\begin{lstlisting}
+bool hasDuplicate(int a[], int n) {
+    for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (a[i] == a[j])
+                return true;
+        }
+    }
+    return false;
+}
+\end{lstlisting}
+
+\graphs{5}
+
+{\small
+\noindent\begin{tabularx}{\textwidth}{@{}l l l Y Y@{}}
+\toprule
+Block & idom & ipdom & Dominates & Post-dominates \\
+\midrule
+\texttt{entry} & -- & \texttt{for.cond} & all other blocks & -- \\
+\texttt{for.cond} & \texttt{entry} & \texttt{return} & \texttt{for.body, for.cond1, for.body3, if.then, if.end, for.inc, for.end, for.inc7, for.end9, return} & \texttt{entry, for.end, for.inc7} \\
+\texttt{for.body} & \texttt{for.cond} & \texttt{for.cond1} & \texttt{for.cond1, for.body3, if.then, if.end, for.inc, for.end, for.inc7} & -- \\
+\texttt{for.cond1} & \texttt{for.body} & \texttt{return} & \texttt{for.body3, if.then, if.end, for.inc, for.end, for.inc7} & \texttt{for.body, if.end, for.inc} \\
+\texttt{for.body3} & \texttt{for.cond1} & \texttt{return} & \texttt{if.then, if.end, for.inc} & -- \\
+\texttt{if.then} & \texttt{for.body3} & \texttt{return} & -- & -- \\
+\texttt{if.end} & \texttt{for.body3} & \texttt{for.inc} & \texttt{for.inc} & -- \\
+\texttt{for.inc} & \texttt{if.end} & \texttt{for.cond1} & -- & \texttt{if.end} \\
+\texttt{for.end} & \texttt{for.cond1} & \texttt{for.inc7} & \texttt{for.inc7} & -- \\
+\texttt{for.inc7} & \texttt{for.end} & \texttt{for.cond} & -- & \texttt{for.end} \\
+\texttt{for.end9} & \texttt{for.cond} & \texttt{return} & -- & -- \\
+\texttt{return} & \texttt{for.cond} & \texttt{exit} & -- & all other blocks \\
+\bottomrule
+\end{tabularx}}
+
+\medskip
+\noindent\textbf{What stands out:} the early \texttt{return true}.
+Normally a loop's exit block post-dominates its header, but here
+\texttt{for.end} does not post-dominate \texttt{for.cond1}, because you
+can leave the inner loop through \texttt{if.then} and go straight to
+\texttt{return}. So the ipdom of \texttt{for.cond1} is \texttt{return}
+itself. Also, \texttt{return} is reached from both \texttt{if.then} and
+\texttt{for.end9}, so its immediate dominator is the outer loop header
+\texttt{for.cond}.
+
+\end{document}

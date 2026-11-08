@@ -1,0 +1,38 @@
+DominatorTree for function: collatzSteps(int)
+=============================--------------------------------
+Inorder Dominator Tree: DFSNumbers invalid: 0 slow queries.
+  [1] %entry {4294967295,4294967295} [0]
+    [2] %while.cond {4294967295,4294967295} [1]
+      [3] %land.rhs {4294967295,4294967295} [2]
+      [3] %land.end {4294967295,4294967295} [2]
+        [4] %while.body {4294967295,4294967295} [3]
+          [5] %if.then {4294967295,4294967295} [4]
+          [5] %if.end {4294967295,4294967295} [4]
+          [5] %if.else {4294967295,4294967295} [4]
+        [4] %while.end {4294967295,4294967295} [3]
+Roots: %entry 
+PostDominatorTree for function: collatzSteps(int)
+=============================--------------------------------
+Inorder PostDominator Tree: DFSNumbers invalid: 0 slow queries.
+  [1]  <<exit node>> {4294967295,4294967295} [0]
+    [2] %while.end {4294967295,4294967295} [1]
+      [3] %land.end {4294967295,4294967295} [2]
+        [4] %while.cond {4294967295,4294967295} [3]
+          [5] %entry {4294967295,4294967295} [4]
+          [5] %if.end {4294967295,4294967295} [4]
+            [6] %if.then {4294967295,4294967295} [5]
+            [6] %while.body {4294967295,4294967295} [5]
+            [6] %if.else {4294967295,4294967295} [5]
+        [4] %land.rhs {4294967295,4294967295} [3]
+Roots: %while.end 
+DominatorTree for function: main
+=============================--------------------------------
+Inorder Dominator Tree: DFSNumbers invalid: 0 slow queries.
+  [1] %entry {4294967295,4294967295} [0]
+Roots: %entry 
+PostDominatorTree for function: main
+=============================--------------------------------
+Inorder PostDominator Tree: DFSNumbers invalid: 0 slow queries.
+  [1]  <<exit node>> {4294967295,4294967295} [0]
+    [2] %entry {4294967295,4294967295} [1]
+Roots: %entry 

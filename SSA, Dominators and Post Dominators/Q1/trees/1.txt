@@ -1,0 +1,40 @@
+DominatorTree for function: classify(int)
+=============================--------------------------------
+Inorder Dominator Tree: DFSNumbers invalid: 0 slow queries.
+  [1] %entry {4294967295,4294967295} [0]
+    [2] %if.then {4294967295,4294967295} [1]
+    [2] %if.end8 {4294967295,4294967295} [1]
+    [2] %if.else {4294967295,4294967295} [1]
+      [3] %if.then2 {4294967295,4294967295} [2]
+      [3] %if.end7 {4294967295,4294967295} [2]
+      [3] %if.else3 {4294967295,4294967295} [2]
+        [4] %if.then5 {4294967295,4294967295} [3]
+        [4] %if.end {4294967295,4294967295} [3]
+        [4] %if.else6 {4294967295,4294967295} [3]
+Roots: %entry 
+PostDominatorTree for function: classify(int)
+=============================--------------------------------
+Inorder PostDominator Tree: DFSNumbers invalid: 0 slow queries.
+  [1]  <<exit node>> {4294967295,4294967295} [0]
+    [2] %if.end8 {4294967295,4294967295} [1]
+      [3] %if.then {4294967295,4294967295} [2]
+      [3] %entry {4294967295,4294967295} [2]
+      [3] %if.end7 {4294967295,4294967295} [2]
+        [4] %if.then2 {4294967295,4294967295} [3]
+        [4] %if.else {4294967295,4294967295} [3]
+        [4] %if.end {4294967295,4294967295} [3]
+          [5] %if.then5 {4294967295,4294967295} [4]
+          [5] %if.else3 {4294967295,4294967295} [4]
+          [5] %if.else6 {4294967295,4294967295} [4]
+Roots: %if.end8 
+DominatorTree for function: main
+=============================--------------------------------
+Inorder Dominator Tree: DFSNumbers invalid: 0 slow queries.
+  [1] %entry {4294967295,4294967295} [0]
+Roots: %entry 
+PostDominatorTree for function: main
+=============================--------------------------------
+Inorder PostDominator Tree: DFSNumbers invalid: 0 slow queries.
+  [1]  <<exit node>> {4294967295,4294967295} [0]
+    [2] %entry {4294967295,4294967295} [1]
+Roots: %entry 

@@ -1,0 +1,44 @@
+DominatorTree for function: hasDuplicate(int*, int)
+=============================--------------------------------
+Inorder Dominator Tree: DFSNumbers invalid: 0 slow queries.
+  [1] %entry {4294967295,4294967295} [0]
+    [2] %for.cond {4294967295,4294967295} [1]
+      [3] %for.body {4294967295,4294967295} [2]
+        [4] %for.cond1 {4294967295,4294967295} [3]
+          [5] %for.body3 {4294967295,4294967295} [4]
+            [6] %if.then {4294967295,4294967295} [5]
+            [6] %if.end {4294967295,4294967295} [5]
+              [7] %for.inc {4294967295,4294967295} [6]
+          [5] %for.end {4294967295,4294967295} [4]
+            [6] %for.inc7 {4294967295,4294967295} [5]
+      [3] %return {4294967295,4294967295} [2]
+      [3] %for.end9 {4294967295,4294967295} [2]
+Roots: %entry 
+PostDominatorTree for function: hasDuplicate(int*, int)
+=============================--------------------------------
+Inorder PostDominator Tree: DFSNumbers invalid: 0 slow queries.
+  [1]  <<exit node>> {4294967295,4294967295} [0]
+    [2] %return {4294967295,4294967295} [1]
+      [3] %if.then {4294967295,4294967295} [2]
+      [3] %for.body3 {4294967295,4294967295} [2]
+      [3] %for.cond1 {4294967295,4294967295} [2]
+        [4] %for.body {4294967295,4294967295} [3]
+        [4] %for.inc {4294967295,4294967295} [3]
+          [5] %if.end {4294967295,4294967295} [4]
+      [3] %for.cond {4294967295,4294967295} [2]
+        [4] %entry {4294967295,4294967295} [3]
+        [4] %for.inc7 {4294967295,4294967295} [3]
+          [5] %for.end {4294967295,4294967295} [4]
+      [3] %for.end9 {4294967295,4294967295} [2]
+Roots: %return 
+DominatorTree for function: main
+=============================--------------------------------
+Inorder Dominator Tree: DFSNumbers invalid: 0 slow queries.
+  [1] %entry {4294967295,4294967295} [0]
+Roots: %entry 
+PostDominatorTree for function: main
+=============================--------------------------------
+Inorder PostDominator Tree: DFSNumbers invalid: 0 slow queries.
+  [1]  <<exit node>> {4294967295,4294967295} [0]
+    [2] %entry {4294967295,4294967295} [1]
+Roots: %entry 

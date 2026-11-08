@@ -1,0 +1,36 @@
+DominatorTree for function: wordScore(char const*)
+=============================--------------------------------
+Inorder Dominator Tree: DFSNumbers invalid: 0 slow queries.
+  [1] %entry {4294967295,4294967295} [0]
+    [2] %do.body {4294967295,4294967295} [1]
+      [3] %sw.default {4294967295,4294967295} [2]
+      [3] %sw.epilog {4294967295,4294967295} [2]
+        [4] %do.cond {4294967295,4294967295} [3]
+          [5] %do.end {4294967295,4294967295} [4]
+      [3] %sw.bb {4294967295,4294967295} [2]
+      [3] %sw.bb1 {4294967295,4294967295} [2]
+Roots: %entry 
+PostDominatorTree for function: wordScore(char const*)
+=============================--------------------------------
+Inorder PostDominator Tree: DFSNumbers invalid: 0 slow queries.
+  [1]  <<exit node>> {4294967295,4294967295} [0]
+    [2] %do.end {4294967295,4294967295} [1]
+      [3] %do.cond {4294967295,4294967295} [2]
+        [4] %sw.epilog {4294967295,4294967295} [3]
+          [5] %sw.bb {4294967295,4294967295} [4]
+          [5] %do.body {4294967295,4294967295} [4]
+            [6] %entry {4294967295,4294967295} [5]
+          [5] %sw.bb1 {4294967295,4294967295} [4]
+          [5] %sw.default {4294967295,4294967295} [4]
+Roots: %do.end 
+DominatorTree for function: main
+=============================--------------------------------
+Inorder Dominator Tree: DFSNumbers invalid: 0 slow queries.
+  [1] %entry {4294967295,4294967295} [0]
+Roots: %entry 
+PostDominatorTree for function: main
+=============================--------------------------------
+Inorder PostDominator Tree: DFSNumbers invalid: 0 slow queries.
+  [1]  <<exit node>> {4294967295,4294967295} [0]
+    [2] %entry {4294967295,4294967295} [1]
+Roots: %entry 

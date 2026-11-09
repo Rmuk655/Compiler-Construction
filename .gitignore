@@ -32,3 +32,6 @@ Lexing-and-Parsing/Tcl-to-Cpp-Transpiler/Qn3/out/
 Kaleidoscope/kaleidoscope-frontend/toy
 BeeScript-Stack-Machine-Interpreter/build-cmake/
 Kaleidoscope/kaleidoscope-flex-bison-baseline/toy
+*.aux
+*.log
+*.out

@@ -54,6 +54,9 @@ DominatorTreeAnalysis & Provides the dominator tree, used to compute where
 PHI nodes are needed and to rename values during SSA construction. \\
 AssumptionAnalysis & Provides \texttt{llvm.assume} information, used so
 that assumes on a promoted value are handled correctly. \\
+TargetIRAnalysis & Provides target-specific information about the IR. It
+is run by the pass manager for \texttt{PromotePass} (it appears in the
+\texttt{-debug-pass-manager} trace). \\
 \bottomrule
 \end{tabular}
 \medskip
